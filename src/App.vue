@@ -28,7 +28,8 @@ const GENRES = [
 
 const SORT_OPTIONS = [
   { value: "popularity.desc",    label: "Most Popular" },
-  { value: "expiring_soon",      label: "Expiring Soon" },
+  { value: "runtime.asc",        label: "Shortest First" },
+  { value: "runtime.desc",       label: "Longest First" },
   { value: "vote_average.desc",  label: "Highest Rated" },
   { value: "primary_release_date.desc", label: "Newest" },
   { value: "primary_release_date.asc",  label: "Oldest" },
@@ -69,9 +70,21 @@ function parseTimeToMinutes(timeStr: string) {
   return hours * 60 + minutes
 }
 
-const selectedProviders = ref<Set<number>>(new Set())
+const savedProviders = (() => {
+  try {
+    const raw = localStorage.getItem('watch:providers')
+    if (raw) return new Set<number>(JSON.parse(raw))
+  } catch {}
+  return new Set<number>()
+})()
+const selectedProviders = ref<Set<number>>(savedProviders)
+
+watch(selectedProviders, (v) => {
+  localStorage.setItem('watch:providers', JSON.stringify([...v]))
+})
 const selectedGenre = ref<number | null>(null)
 const sortBy = ref("popularity.desc")
+const expiringFirst = ref(false)
 const startTimeStr = ref("")
 const endTimeStr = ref("")
 const movies = ref<any[]>([])
@@ -102,6 +115,7 @@ watch([startTimeStr, endTimeStr], ([s, e]) => {
   if (s || e) {
     tickTimer = setInterval(() => { now.value = Date.now() }, 1000)
   }
+  if (!e) expiringFirst.value = false
 }, { immediate: true })
 
 onUnmounted(() => { if (tickTimer) clearInterval(tickTimer) })
@@ -135,7 +149,12 @@ const filtered = computed(() => {
   let result = maxRuntimeMinutes.value != null
     ? movies.value.filter((m) => m.runtime && m.runtime <= maxRuntimeMinutes.value!)
     : movies.value
-  if (sortBy.value === 'expiring_soon') {
+  if (sortBy.value === 'runtime.asc') {
+    result = [...result].sort((a, b) => (a.runtime ?? Infinity) - (b.runtime ?? Infinity))
+  } else if (sortBy.value === 'runtime.desc') {
+    result = [...result].sort((a, b) => (b.runtime ?? 0) - (a.runtime ?? 0))
+  }
+  if (expiringFirst.value && maxRuntimeMinutes.value != null) {
     result = [...result].sort((a, b) => (b.runtime ?? 0) - (a.runtime ?? 0))
   }
   return result
@@ -182,18 +201,25 @@ const providerIdParam = computed(() =>
   [...selectedProviders.value].join('|')
 )
 
+
 function movieProviders(movie: any) {
-  const flatrate = movie['watch/providers']?.results?.US?.flatrate || []
-  return PROVIDERS.filter(p =>
-    selectedProviders.value.has(p.id) && flatrate.some((f: any) => f.provider_id === p.id)
-  )
+  const watchData = movie['watch/providers']?.results?.US
+  const flatrate: any[] = watchData?.flatrate || []
+  const link: string | null = watchData?.link || null
+  return PROVIDERS
+    .filter(p => selectedProviders.value.has(p.id) && flatrate.some(f => f.provider_id === p.id))
+    .map(p => {
+      const logo = flatrate.find(f => f.provider_id === p.id)?.logo_path
+      return { ...p, logo: logo ? `https://image.tmdb.org/t/p/w45${logo}` : null, link }
+    })
 }
 
 const PAGES_PER_BATCH = 3
 const MAX_PAGE = 15
 
 async function fetchPage(providerIds: string, pg: number) {
-  const apiSort = sortBy.value === 'expiring_soon' ? 'popularity.desc' : sortBy.value
+  const clientSorts = ['runtime.asc', 'runtime.desc']
+  const apiSort = clientSorts.includes(sortBy.value) ? 'popularity.desc' : sortBy.value
   let url = `https://api.themoviedb.org/3/discover/movie?with_watch_providers=${providerIds}&watch_region=US&sort_by=${apiSort}&page=${pg}&with_original_language=en`
   if (selectedGenre.value) url += `&with_genres=${selectedGenre.value}`
   if (personFilter.value) url += `&with_people=${personFilter.value.id}`
@@ -264,7 +290,7 @@ function refetch() {
 watch(selectedProviders, () => {
   if (hasProviders.value) refetch()
   else { movies.value = []; hasMore.value = false }
-})
+}, { immediate: true })
 watch([selectedGenre, sortBy, personFilter], () => { refetch() })
 
 function searchPerson(person: { id: number; name: string }) {
@@ -421,16 +447,25 @@ function closeMovie() {
               </button>
             </div>
           </div>
-          <div class="min-w-44 max-sm:min-w-0">
-            <p class="control-label">Sort by</p>
-            <select
-              v-model="sortBy"
-              class="select-input"
-              :class="{ active: sortBy !== 'popularity.desc' }"
-              :style="{ '--c': providerColor }"
-            >
-              <option v-for="s in SORT_OPTIONS" :key="s.value" :value="s.value">{{ s.label }}</option>
-            </select>
+          <div class="min-w-44 max-sm:min-w-0 flex flex-col gap-4">
+            <div>
+              <p class="control-label">Sort by</p>
+              <select
+                v-model="sortBy"
+                class="select-input"
+                :class="{ active: sortBy !== 'popularity.desc' }"
+                :style="{ '--c': providerColor }"
+              >
+                <option v-for="s in SORT_OPTIONS" :key="s.value" :value="s.value">{{ s.label }}</option>
+              </select>
+            </div>
+            <label v-if="endTimeStr" class="expiring-toggle" :style="{ '--c': providerColor }">
+              <input type="checkbox" v-model="expiringFirst" class="sr-only" />
+              <span class="toggle-track" :class="{ on: expiringFirst }">
+                <span class="toggle-thumb" />
+              </span>
+              <span class="text-[12px] text-text-muted">Expiring first</span>
+            </label>
           </div>
         </div>
       </Transition>
@@ -538,7 +573,7 @@ function closeMovie() {
       </template>
     </div>
 
-    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :providers="movieProviders(selectedMovie)" @close="closeMovie" @search-person="searchPerson" />
+    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :deadline-ms="deadlineMs" :providers="movieProviders(selectedMovie)" @close="closeMovie" @search-person="searchPerson" />
   </div>
 </template>
 
@@ -611,6 +646,24 @@ function closeMovie() {
   transition: opacity 0.2s;
 }
 .person-badge-close:hover { opacity: 1; }
+
+/* ═══ Expiring toggle ═══ */
+.expiring-toggle {
+  @apply flex items-center gap-2.5 cursor-pointer;
+}
+.toggle-track {
+  @apply relative w-8 h-[18px] rounded-full bg-border transition-colors duration-300;
+}
+.toggle-track.on {
+  background: color-mix(in srgb, var(--c) 50%, transparent);
+}
+.toggle-thumb {
+  @apply absolute top-[3px] left-[3px] w-3 h-3 rounded-full bg-text-muted transition-all duration-300;
+}
+.toggle-track.on .toggle-thumb {
+  transform: translateX(14px);
+  background: var(--c);
+}
 
 /* ═══ Select ═══ */
 .select-input {

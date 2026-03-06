@@ -7,7 +7,7 @@ const props = defineProps<{
   deadlineMs: number | null
   now: number
   startAt: number
-  providers: { id: number; name: string; color: string }[]
+  providers: { id: number; name: string; color: string; logo: string | null; link: string | null }[]
   multiService: boolean
 }>()
 
@@ -123,13 +123,14 @@ const glowGradient = computed(() => {
         <span v-else class="text-[11px] text-text-dim italic">No runtime</span>
 
         <div class="hover-reveal" :class="{ visible: hovered }">
-          <div v-if="multiService && providers.length" class="flex items-center gap-1.5 mt-1.5">
-            <span
+          <div v-if="multiService && providers.length" class="flex items-center gap-1 mt-1.5">
+            <img
               v-for="prov in providers"
               :key="prov.id"
-              class="provider-dot"
-              :style="{ background: prov.color }"
+              :src="prov.logo"
+              :alt="prov.name"
               :title="prov.name"
+              class="provider-icon"
             />
           </div>
 
@@ -170,12 +171,12 @@ const glowGradient = computed(() => {
     0 2px 8px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
-.provider-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  box-shadow: 0 0 4px currentColor;
-  opacity: 0.8;
+.provider-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .card-wrap:hover .card {

@@ -6,7 +6,8 @@ const props = defineProps<{
   accentColor: string
   flipOrigin: { x: number; y: number; w: number; h: number } | null
   startAt: number | null
-  providers: { id: number; name: string; color: string }[]
+  deadlineMs: number | null
+  providers: { id: number; name: string; color: string; logo: string | null; link: string | null }[]
 }>()
 
 const emit = defineEmits<{ close: []; 'search-person': [person: { id: number; name: string }] }>()
@@ -35,6 +36,33 @@ const endTimeDisplay = computed(() => {
   const end = new Date(effectiveStart.value + props.movie.runtime * 60000)
   return end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 })
+
+const countdownSecs = computed(() => {
+  if (!props.deadlineMs || !props.movie.runtime) return null
+  const latestStart = props.deadlineMs - props.movie.runtime * 60000
+  return Math.max(0, Math.floor((latestStart - liveClock.value) / 1000))
+})
+
+const showCountdown = computed(() =>
+  countdownSecs.value != null && countdownSecs.value <= 600
+)
+
+const urgency = computed(() => {
+  if (countdownSecs.value == null) return null
+  const mins = countdownSecs.value / 60
+  if (mins <= 5) return 'critical'
+  if (mins <= 15) return 'warning'
+  return 'normal'
+})
+
+function fmtCountdown(totalSecs: number) {
+  const h = Math.floor(totalSecs / 3600)
+  const m = Math.floor((totalSecs % 3600) / 60)
+  const s = totalSecs % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`
+  return `${m}:${pad(s)}`
+}
 
 const backdrop = computed(() =>
   props.movie.backdrop_path
@@ -166,7 +194,7 @@ onMounted(() => {
   document.addEventListener('keydown', onKey)
   backdropEl.value?.focus()
   animateIn()
-  if (props.startAt == null) {
+  if (props.startAt == null || props.deadlineMs) {
     clockTimer = setInterval(() => { liveClock.value = Date.now() }, 1000)
   }
 })
@@ -207,6 +235,13 @@ onUnmounted(() => {
           <img v-if="backdrop" :src="backdrop" :alt="movie.title" class="w-full h-full object-cover block scale-105" />
           <div v-else class="w-full h-full bg-linear-to-br from-surface-alt to-surface" />
           <div class="hero-fade" />
+          <!-- Countdown badge -->
+          <Transition name="badge">
+            <div v-if="showCountdown" class="modal-countdown" :class="urgency">
+              <span class="text-[10px] text-text-muted mr-1.5">Start within</span>
+              <span class="countdown-value">{{ fmtCountdown(countdownSecs!) }}</span>
+            </div>
+          </Transition>
           <!-- Accent colored line at bottom of hero -->
           <div class="absolute bottom-0 left-0 right-0 h-px" :style="{ background: `linear-gradient(90deg, transparent 0%, ${accentColor}30 50%, transparent 100%)` }" />
         </div>
@@ -241,15 +276,21 @@ onUnmounted(() => {
               </div>
               <!-- Streaming services -->
               <div v-if="providers.length" class="flex flex-wrap gap-1.5 mt-3">
-                <span
+                <a
                   v-for="prov in providers"
                   :key="prov.id"
+                  :href="prov.link || undefined"
+                  :target="prov.link ? '_blank' : undefined"
+                  rel="noopener"
                   class="streaming-pill"
+                  :class="{ clickable: prov.link }"
                   :style="{ '--prov-color': prov.color }"
                 >
-                  <span class="streaming-dot" :style="{ background: prov.color }" />
+                  <img v-if="prov.logo" :src="prov.logo" :alt="prov.name" class="streaming-logo" />
+                  <span v-else class="streaming-dot" :style="{ background: prov.color }" />
                   {{ prov.name }}
-                </span>
+                  <svg v-if="prov.link" class="link-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
               </div>
             </div>
           </div>
@@ -340,6 +381,40 @@ onUnmounted(() => {
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+.modal-countdown {
+  @apply absolute top-4 left-4 z-20 px-3 py-1.5 rounded-lg flex items-center;
+  font-family: var(--font-mono);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.modal-countdown .countdown-value {
+  @apply text-[13px] font-medium tabular-nums tracking-wider;
+  color: var(--color-text-secondary);
+}
+.modal-countdown.warning {
+  border-color: rgba(240, 160, 48, 0.15);
+  background: rgba(240, 160, 48, 0.08);
+}
+.modal-countdown.warning .countdown-value { color: #e8a030; }
+.modal-countdown.critical {
+  border-color: rgba(255, 68, 68, 0.2);
+  background: rgba(255, 68, 68, 0.08);
+  animation: modal-badge-pulse 2s ease-in-out infinite;
+}
+.modal-countdown.critical .countdown-value { color: #ff5555; }
+
+@keyframes modal-badge-pulse {
+  0%, 100% { background: rgba(255, 68, 68, 0.08); }
+  50% { background: rgba(255, 68, 68, 0.15); }
+}
+
+.badge-enter-active { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.badge-leave-active { transition: all 0.2s ease; }
+.badge-enter-from { opacity: 0; transform: scale(0.7) translateY(-6px); }
+.badge-leave-to { opacity: 0; transform: scale(0.8); }
+
 .hero-fade {
   @apply absolute inset-0;
   background: linear-gradient(
@@ -414,10 +489,28 @@ onUnmounted(() => {
 }
 
 .streaming-pill {
-  @apply inline-flex items-center gap-1.5 text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-full;
+  @apply inline-flex items-center gap-1.5 text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-full no-underline;
   color: var(--prov-color);
   background: color-mix(in srgb, var(--prov-color) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--prov-color) 15%, transparent);
+  transition: background 0.2s, border-color 0.2s;
+}
+.streaming-pill.clickable:hover {
+  background: color-mix(in srgb, var(--prov-color) 18%, transparent);
+  border-color: color-mix(in srgb, var(--prov-color) 30%, transparent);
+}
+.link-icon {
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+.streaming-pill.clickable:hover .link-icon {
+  opacity: 0.8;
+}
+.streaming-logo {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: cover;
 }
 .streaming-dot {
   width: 5px;
