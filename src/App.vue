@@ -519,7 +519,7 @@ function closeMovie() {
 
       <!-- ═══ Results ═══ -->
       <template v-if="!loading && hasProviders">
-        <div class="flex items-end gap-4 mb-8">
+        <div v-if="endTimeStr" class="flex items-end gap-4 mb-8">
           <span
             class="font-display text-5xl font-bold leading-none tracking-tight"
             :style="activeProviderColors.length > 1
@@ -530,7 +530,7 @@ function closeMovie() {
           </span>
           <div class="pb-1.5">
             <span class="text-text-muted text-[13px]">
-              {{ endTimeStr ? `movies finishing before ${endTimeStr}` : 'movies available' }}
+              movies finishing before {{ endTimeStr }}
             </span>
             <template v-if="movies.length > filtered.length">
               <span class="text-text-dim text-[13px] ml-1.5">
