@@ -5,6 +5,8 @@ const props = defineProps<{
   movie: any
   accentColor: string
   flipOrigin: { x: number; y: number; w: number; h: number } | null
+  startAt: number | null
+  providers: { id: number; name: string; color: string }[]
 }>()
 
 const emit = defineEmits<{ close: []; 'search-person': [person: { id: number; name: string }] }>()
@@ -13,16 +15,26 @@ const modalCardEl = ref<HTMLElement | null>(null)
 const animating = ref(false)
 const backdropVisible = ref(false)
 
+const liveClock = ref(Date.now())
+let clockTimer: ReturnType<typeof setInterval> | null = null
+
+const effectiveStart = computed(() => props.startAt ?? liveClock.value)
+
 function fmtRuntime(min: number) {
   const h = Math.floor(min / 60)
   const m = min % 60
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-function endTime(runtime: number) {
-  const end = new Date(Date.now() + runtime * 60000)
+const startTimeDisplay = computed(() =>
+  new Date(effectiveStart.value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+)
+
+const endTimeDisplay = computed(() => {
+  if (!props.movie.runtime) return ''
+  const end = new Date(effectiveStart.value + props.movie.runtime * 60000)
   return end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
+})
 
 const backdrop = computed(() =>
   props.movie.backdrop_path
@@ -154,8 +166,14 @@ onMounted(() => {
   document.addEventListener('keydown', onKey)
   backdropEl.value?.focus()
   animateIn()
+  if (props.startAt == null) {
+    clockTimer = setInterval(() => { liveClock.value = Date.now() }, 1000)
+  }
 })
-onUnmounted(() => document.removeEventListener('keydown', onKey))
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKey)
+  if (clockTimer) clearInterval(clockTimer)
+})
 </script>
 
 <template>
@@ -221,6 +239,18 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
                   {{ g }}
                 </span>
               </div>
+              <!-- Streaming services -->
+              <div v-if="providers.length" class="flex flex-wrap gap-1.5 mt-3">
+                <span
+                  v-for="prov in providers"
+                  :key="prov.id"
+                  class="streaming-pill"
+                  :style="{ '--prov-color': prov.color }"
+                >
+                  <span class="streaming-dot" :style="{ background: prov.color }" />
+                  {{ prov.name }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -230,17 +260,16 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
           </p>
 
           <!-- Director & Cast -->
-          <div v-if="directorObj || cast.length" class="mt-7 flex flex-col gap-4">
-            <div v-if="directorObj" class="flex items-baseline gap-2">
-              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium shrink-0">Director</span>
+          <div v-if="directorObj || cast.length" class="credits-section mt-7">
+            <div v-if="directorObj" class="credit-row">
+              <span class="credit-label">Directed by</span>
               <button class="person-link" @click="emit('search-person', { id: directorObj.id, name: directorObj.name })">{{ directorObj.name }}</button>
             </div>
-            <div v-if="cast.length" class="flex flex-col gap-2">
-              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Cast</span>
-              <div class="flex flex-wrap gap-x-4 gap-y-1.5">
-                <span v-for="person in cast" :key="person.id" class="text-[13px] text-text-secondary">
-                  <button class="person-link" @click="emit('search-person', { id: person.id, name: person.name })">{{ person.name }}</button><span v-if="person.character" class="text-text-dim text-[11px] ml-1.5">{{ person.character }}</span>
-                </span>
+            <div v-if="directorObj && cast.length" class="credit-divider" />
+            <div v-if="cast.length" class="cast-list">
+              <div v-for="person in cast" :key="person.id" class="cast-row">
+                <button class="person-link" @click="emit('search-person', { id: person.id, name: person.name })">{{ person.name }}</button>
+                <span v-if="person.character" class="cast-role">as {{ person.character }}</span>
               </div>
             </div>
           </div>
@@ -268,9 +297,16 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
             </div>
             <div class="w-px h-10 self-center" :style="{ background: `${accentColor}20` }" />
             <div class="flex flex-col gap-1.5">
-              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Start now, done by</span>
+              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Start</span>
+              <span class="text-[15px] font-mono font-medium tabular-nums text-text-secondary">
+                {{ startTimeDisplay }}
+              </span>
+            </div>
+            <div class="w-px h-10 self-center" :style="{ background: `${accentColor}20` }" />
+            <div class="flex flex-col gap-1.5">
+              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Done by</span>
               <span class="text-[15px] font-mono font-medium tabular-nums" :style="{ color: accentColor }">
-                {{ endTime(movie.runtime) }}
+                {{ endTimeDisplay }}
               </span>
             </div>
           </div>
@@ -329,6 +365,65 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.credits-section {
+  @apply rounded-xl;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  padding: 16px 20px;
+}
+.credit-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.credit-label {
+  @apply text-[11px] text-text-muted;
+}
+.credit-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 12px 0;
+}
+.cast-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 20px;
+}
+@media (max-width: 640px) {
+  .cast-list { grid-template-columns: 1fr; }
+}
+.cast-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.cast-row .person-link {
+  flex-shrink: 0;
+}
+.cast-role {
+  @apply text-[11px] text-text-muted;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.streaming-pill {
+  @apply inline-flex items-center gap-1.5 text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-full;
+  color: var(--prov-color);
+  background: color-mix(in srgb, var(--prov-color) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--prov-color) 15%, transparent);
+}
+.streaming-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  box-shadow: 0 0 4px currentColor;
 }
 
 .person-link {

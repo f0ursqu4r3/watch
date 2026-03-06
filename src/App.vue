@@ -69,9 +69,10 @@ function parseTimeToMinutes(timeStr: string) {
   return hours * 60 + minutes
 }
 
-const selectedProvider = ref<typeof PROVIDERS[number] | null>(null)
+const selectedProviders = ref<Set<number>>(new Set())
 const selectedGenre = ref<number | null>(null)
 const sortBy = ref("popularity.desc")
+const startTimeStr = ref("")
 const endTimeStr = ref("")
 const movies = ref<any[]>([])
 const loading = ref(false)
@@ -96,14 +97,23 @@ const timeOptions = (() => {
 const now = ref(Date.now())
 let tickTimer: ReturnType<typeof setInterval> | null = null
 
-watch(endTimeStr, (val) => {
+watch([startTimeStr, endTimeStr], ([s, e]) => {
   if (tickTimer) { clearInterval(tickTimer); tickTimer = null }
-  if (val) {
+  if (s || e) {
     tickTimer = setInterval(() => { now.value = Date.now() }, 1000)
   }
 }, { immediate: true })
 
 onUnmounted(() => { if (tickTimer) clearInterval(tickTimer) })
+
+const startMs = computed(() => {
+  if (!startTimeStr.value) return null
+  const mins = parseTimeToMinutes(startTimeStr.value)
+  const d = new Date()
+  d.setHours(Math.floor(mins / 60), mins % 60, 0, 0)
+  if (d.getTime() < now.value - 60000) d.setDate(d.getDate() + 1)
+  return d.getTime()
+})
 
 const deadlineMs = computed(() => {
   if (!endTimeStr.value) return null
@@ -114,9 +124,11 @@ const deadlineMs = computed(() => {
   return today.getTime()
 })
 
+const effectiveStartMs = computed(() => startMs.value ?? now.value)
+
 const maxRuntimeMinutes = computed(() => {
   if (!deadlineMs.value) return null
-  return Math.floor((deadlineMs.value - now.value) / 60000)
+  return Math.floor((deadlineMs.value - effectiveStartMs.value) / 60000)
 })
 
 const filtered = computed(() => {
@@ -129,14 +141,60 @@ const filtered = computed(() => {
   return result
 })
 
-const providerColor = computed(() => selectedProvider.value?.color || "#ff6b35")
+const hasProviders = computed(() => selectedProviders.value.size > 0)
+
+const activeProviderColors = computed(() => {
+  const colors = PROVIDERS.filter(p => selectedProviders.value.has(p.id)).map(p => p.color)
+  return colors.length ? colors : ["#ff6b35"]
+})
+
+const providerColor = computed(() => activeProviderColors.value[0]!)
+
+const providerGradient = computed(() => {
+  const c = activeProviderColors.value
+  if (c.length === 1) return c[0]!
+  return `linear-gradient(135deg, ${c.join(', ')})`
+})
+
+const ambientPositions = [
+  { x: 50, y: -20, w: 100, h: 60 },
+  { x: 80, y: 10, w: 50, h: 40 },
+  { x: 20, y: 5, w: 60, h: 45 },
+  { x: 65, y: -10, w: 70, h: 50 },
+  { x: 35, y: 15, w: 55, h: 35 },
+  { x: 50, y: 0, w: 80, h: 55 },
+  { x: 15, y: -5, w: 45, h: 40 },
+  { x: 75, y: 5, w: 65, h: 45 },
+]
+
+const ambientBackground = computed(() => {
+  const c = activeProviderColors.value
+  const intensity = hasProviders.value ? 8 : 3
+  const gradients = c.map((color, i) => {
+    const pos = ambientPositions[i % ambientPositions.length]!
+    return `radial-gradient(ellipse ${pos.w}% ${pos.h}% at ${pos.x}% ${pos.y}%, color-mix(in srgb, ${color} ${intensity}%, transparent) 0%, transparent 70%)`
+  })
+  gradients.push('radial-gradient(ellipse 50% 40% at 20% 80%, rgba(10, 15, 21, 0.5) 0%, transparent 70%)')
+  return gradients.join(', ')
+})
+
+const providerIdParam = computed(() =>
+  [...selectedProviders.value].join('|')
+)
+
+function movieProviders(movie: any) {
+  const flatrate = movie['watch/providers']?.results?.US?.flatrate || []
+  return PROVIDERS.filter(p =>
+    selectedProviders.value.has(p.id) && flatrate.some((f: any) => f.provider_id === p.id)
+  )
+}
 
 const PAGES_PER_BATCH = 3
 const MAX_PAGE = 15
 
-async function fetchPage(providerId: number, pg: number) {
+async function fetchPage(providerIds: string, pg: number) {
   const apiSort = sortBy.value === 'expiring_soon' ? 'popularity.desc' : sortBy.value
-  let url = `https://api.themoviedb.org/3/discover/movie?with_watch_providers=${providerId}&watch_region=US&sort_by=${apiSort}&page=${pg}&with_original_language=en`
+  let url = `https://api.themoviedb.org/3/discover/movie?with_watch_providers=${providerIds}&watch_region=US&sort_by=${apiSort}&page=${pg}&with_original_language=en`
   if (selectedGenre.value) url += `&with_genres=${selectedGenre.value}`
   if (personFilter.value) url += `&with_people=${personFilter.value.id}`
   if (sortBy.value === "vote_average.desc") url += `&vote_count.gte=200`
@@ -146,22 +204,28 @@ async function fetchPage(providerId: number, pg: number) {
   return data
 }
 
-async function fetchMovies(providerId: number, startPage = 1) {
+async function fetchMovies(providerIds: string, startPage = 1) {
   const isInitial = startPage === 1
   if (isInitial) loading.value = true
   else loadingMore.value = true
   error.value = null
   try {
-    const firstData = await fetchPage(providerId, startPage)
+    const firstData = await fetchPage(providerIds, startPage)
     const maxAvailable = Math.min(firstData.total_pages, MAX_PAGE)
     const endPage = Math.min(startPage + PAGES_PER_BATCH - 1, maxAvailable)
     const remainingPages = []
     for (let p = startPage + 1; p <= endPage; p++) remainingPages.push(p)
-    const allData = [firstData, ...await Promise.all(remainingPages.map(p => fetchPage(providerId, p)))]
+    const allData = [firstData, ...await Promise.all(remainingPages.map(p => fetchPage(providerIds, p)))]
     const allResults = allData.flatMap(d => d.results)
+    const seenIds = new Set(movies.value.map((m: any) => m.id))
+    const unique = allResults.filter((m: any) => {
+      if (seenIds.has(m.id)) return false
+      seenIds.add(m.id)
+      return true
+    })
     const movieDetails = await Promise.all(
-      allResults.map((m: any) =>
-        fetch(`https://api.themoviedb.org/3/movie/${m.id}?append_to_response=credits,videos,release_dates`, { headers })
+      unique.map((m: any) =>
+        fetch(`https://api.themoviedb.org/3/movie/${m.id}?append_to_response=credits,videos,release_dates,watch/providers`, { headers })
           .then((r) => r.json())
           .catch(() => ({ ...m, runtime: null }))
       )
@@ -179,7 +243,10 @@ async function fetchMovies(providerId: number, startPage = 1) {
 }
 
 function toggleProvider(p: typeof PROVIDERS[number]) {
-  selectedProvider.value = selectedProvider.value?.id === p.id ? null : p
+  const next = new Set(selectedProviders.value)
+  if (next.has(p.id)) next.delete(p.id)
+  else next.add(p.id)
+  selectedProviders.value = next
 }
 
 function toggleGenre(id: number) {
@@ -187,14 +254,17 @@ function toggleGenre(id: number) {
 }
 
 function refetch() {
-  if (selectedProvider.value) {
+  if (hasProviders.value) {
     movies.value = []
     page.value = 1
-    fetchMovies(selectedProvider.value.id, 1)
+    fetchMovies(providerIdParam.value, 1)
   }
 }
 
-watch(selectedProvider, (provider) => { if (provider) refetch() })
+watch(selectedProviders, () => {
+  if (hasProviders.value) refetch()
+  else { movies.value = []; hasMore.value = false }
+})
 watch([selectedGenre, sortBy, personFilter], () => { refetch() })
 
 function searchPerson(person: { id: number; name: string }) {
@@ -213,8 +283,8 @@ function setupObserver() {
   if (observer) observer.disconnect()
   observer = new IntersectionObserver((entries) => {
     const entry = entries[0]
-    if (entry && entry.isIntersecting && hasMore.value && !loadingMore.value && !loading.value && selectedProvider.value) {
-      fetchMovies(selectedProvider.value.id, page.value + 1)
+    if (entry && entry.isIntersecting && hasMore.value && !loadingMore.value && !loading.value && hasProviders.value) {
+      fetchMovies(providerIdParam.value, page.value + 1)
     }
   }, { rootMargin: '400px' })
   watch(sentinel, (el) => {
@@ -251,10 +321,7 @@ function closeMovie() {
 <template>
   <div class="min-h-screen bg-void font-body text-text-body relative overflow-hidden">
     <!-- Layered ambient lighting -->
-    <div class="ambient-layer" :style="{
-      '--c': selectedProvider?.color || '#ff6b35',
-      '--intensity': selectedProvider ? '0.08' : '0.03',
-    }" />
+    <div class="ambient-layer" :style="{ background: ambientBackground }" />
     <div class="grain-overlay" />
 
     <div class="relative z-1 max-w-280 mx-auto px-8 pb-32 max-sm:px-5">
@@ -263,28 +330,36 @@ function closeMovie() {
       <header class="pt-20 pb-14 max-sm:pt-14 max-sm:pb-10">
         <div class="flex items-center gap-3 mb-6">
           <div class="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
-          <span class="text-[10px] tracking-[5px] uppercase text-text-muted font-medium">Tonight's Screening</span>
+          <span class="text-[10px] tracking-[5px] uppercase text-text-muted font-medium">What fits tonight</span>
           <div class="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
         </div>
         <h1 class="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold m-0 leading-[1.05] text-text-primary text-center">
-          Pick a film,<br />
-          <em class="font-display italic font-medium transition-colors duration-700 ease-out" :style="{ color: providerColor }">
-            not a rabbit hole.
+          Set your window.<br />
+          <em
+            class="tagline-accent font-display italic font-medium"
+            :style="activeProviderColors.length > 1
+              ? { backgroundImage: providerGradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }
+              : { color: providerColor }"
+          >
+            We'll find what fits.
           </em>
         </h1>
+        <p class="text-text-muted text-[13px] text-center mt-5 max-w-md mx-auto leading-relaxed">
+          Pick a platform, set your start and end time, and only see movies you can actually finish.
+        </p>
         <div class="w-12 h-px bg-border mx-auto mt-8" />
       </header>
 
       <!-- ═══ Controls ═══ -->
       <div class="grid grid-cols-[1fr_auto] gap-10 items-start mb-12 max-sm:grid-cols-1 max-sm:gap-8">
         <div>
-          <p class="control-label">Streaming on</p>
+          <p class="control-label">My services</p>
           <div class="flex flex-wrap gap-2.5">
             <button
               v-for="p in PROVIDERS"
               :key="p.id"
               class="pill-btn"
-              :class="{ active: selectedProvider?.id === p.id }"
+              :class="{ active: selectedProviders.has(p.id) }"
               :style="{ '--c': p.color }"
               @click="toggleProvider(p)"
             >
@@ -294,29 +369,43 @@ function closeMovie() {
           </div>
         </div>
 
-        <div class="min-w-44 max-sm:min-w-0">
-          <p class="control-label">Done by</p>
-          <select
-            v-model="endTimeStr"
-            class="select-input"
-            :class="{ active: !!endTimeStr }"
-            :style="endTimeStr ? { '--c': providerColor } : {}"
-          >
-            <option value="">Any time</option>
-            <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-          </select>
-          <Transition name="hint">
-            <p v-if="maxRuntimeMinutes" class="mt-2.5 text-[11px] text-text-muted tracking-wide tabular-nums flex items-center gap-1.5">
-              <span class="inline-block w-1 h-1 rounded-full" :style="{ background: providerColor }" />
-              {{ fmtRuntime(maxRuntimeMinutes) }} max runtime
-            </p>
-          </Transition>
+        <div class="flex gap-4 max-sm:flex-col max-sm:gap-6">
+          <div class="min-w-36 max-sm:min-w-0">
+            <p class="control-label">Start at</p>
+            <select
+              v-model="startTimeStr"
+              class="select-input"
+              :class="{ active: !!startTimeStr }"
+              :style="startTimeStr ? { '--c': providerColor } : {}"
+            >
+              <option value="">Now</option>
+              <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="min-w-36 max-sm:min-w-0">
+            <p class="control-label">Done by</p>
+            <select
+              v-model="endTimeStr"
+              class="select-input"
+              :class="{ active: !!endTimeStr }"
+              :style="endTimeStr ? { '--c': providerColor } : {}"
+            >
+              <option value="">Any time</option>
+              <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+            </select>
+            <Transition name="hint">
+              <p v-if="maxRuntimeMinutes != null && maxRuntimeMinutes > 0" class="mt-2.5 text-[11px] text-text-muted tracking-wide tabular-nums flex items-center gap-1.5">
+                <span class="inline-block w-1 h-1 rounded-full" :style="{ background: providerColor }" />
+                {{ fmtRuntime(maxRuntimeMinutes) }} max runtime
+              </p>
+            </Transition>
+          </div>
         </div>
       </div>
 
       <!-- ═══ Genre & Sort ═══ -->
       <Transition name="slide-fade">
-        <div v-if="selectedProvider" class="grid grid-cols-[1fr_auto] gap-10 items-start mb-12 pb-10 border-b border-border-subtle max-sm:grid-cols-1 max-sm:gap-8">
+        <div v-if="hasProviders" class="grid grid-cols-[1fr_auto] gap-10 items-start mb-12 pb-10 border-b border-border-subtle max-sm:grid-cols-1 max-sm:gap-8">
           <div>
             <p class="control-label">Genre</p>
             <div class="flex flex-wrap gap-2">
@@ -361,7 +450,7 @@ function closeMovie() {
 
       <!-- ═══ Empty state ═══ -->
       <Transition name="fade" mode="out-in">
-        <div v-if="!selectedProvider" class="text-center pt-28 max-sm:pt-20">
+        <div v-if="!hasProviders" class="text-center pt-28 max-sm:pt-20">
           <div class="empty-rings">
             <div class="orbit ring-1" />
             <div class="orbit ring-2" />
@@ -377,7 +466,7 @@ function closeMovie() {
       <Transition name="fade">
         <div v-if="loading" class="text-center pt-28">
           <div class="loading-bars">
-            <span v-for="i in 5" :key="i" class="bar" :style="{ animationDelay: `${i * 0.1}s`, background: providerColor }" />
+            <span v-for="i in 5" :key="i" class="bar" :style="{ animationDelay: `${i * 0.1}s`, background: activeProviderColors[(i - 1) % activeProviderColors.length] }" />
           </div>
           <p class="text-text-muted text-xs tracking-[3px] uppercase mt-6">Loading</p>
         </div>
@@ -394,9 +483,14 @@ function closeMovie() {
       </Transition>
 
       <!-- ═══ Results ═══ -->
-      <template v-if="!loading && selectedProvider">
+      <template v-if="!loading && hasProviders">
         <div class="flex items-end gap-4 mb-8">
-          <span class="font-display text-5xl font-bold leading-none tracking-tight" :style="{ color: providerColor }">
+          <span
+            class="font-display text-5xl font-bold leading-none tracking-tight"
+            :style="activeProviderColors.length > 1
+              ? { backgroundImage: providerGradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }
+              : { color: providerColor }"
+          >
             {{ filtered.length }}
           </span>
           <div class="pb-1.5">
@@ -427,6 +521,9 @@ function closeMovie() {
             :accent-color="providerColor"
             :deadline-ms="deadlineMs"
             :now="now"
+            :start-at="effectiveStartMs"
+            :providers="movieProviders(movie)"
+            :multi-service="selectedProviders.size > 1"
             @select="openMovie"
           />
         </TransitionGroup>
@@ -441,7 +538,7 @@ function closeMovie() {
       </template>
     </div>
 
-    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" @close="closeMovie" @search-person="searchPerson" />
+    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :providers="movieProviders(selectedMovie)" @close="closeMovie" @search-person="searchPerson" />
   </div>
 </template>
 
@@ -451,10 +548,6 @@ function closeMovie() {
 /* ═══ Ambient lighting ═══ */
 .ambient-layer {
   @apply fixed inset-0 pointer-events-none z-0;
-  background:
-    radial-gradient(ellipse 100% 60% at 50% -20%, color-mix(in srgb, var(--c) calc(var(--intensity) * 100%), transparent) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 30% at 80% 10%, color-mix(in srgb, var(--c) 3%, transparent) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(10, 15, 21, 0.5) 0%, transparent 70%);
   transition: background 1.2s ease;
 }
 

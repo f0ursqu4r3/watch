@@ -6,6 +6,9 @@ const props = defineProps<{
   accentColor: string
   deadlineMs: number | null
   now: number
+  startAt: number
+  providers: { id: number; name: string; color: string }[]
+  multiService: boolean
 }>()
 
 const emit = defineEmits<{ select: [movie: any, rect?: DOMRect] }>()
@@ -19,7 +22,7 @@ function fmtRuntime(min: number) {
 }
 
 function endTime(runtime: number) {
-  const end = new Date(props.now + runtime * 60000)
+  const end = new Date(props.startAt + runtime * 60000)
   return end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
@@ -53,21 +56,31 @@ const showCountdown = computed(() =>
 const poster = props.movie.poster_path
   ? `https://image.tmdb.org/t/p/w342${props.movie.poster_path}`
   : null
+
+const glowGradient = computed(() => {
+  const colors = props.providers.map(p => p.color)
+  if (colors.length <= 1) return null
+  // Duplicate first color at end so the conic gradient loops seamlessly
+  const stops = [...colors, colors[0]!]
+  return `conic-gradient(from 0deg, ${stops.join(', ')})`
+})
 </script>
 
 <template>
-  <div
-    class="card"
-    :class="{ expiring: showCountdown }"
-    :style="{
-      '--accent': accentColor,
-      '--glow': showCountdown && urgency === 'critical' ? '#ff4444' : showCountdown ? '#f0a030' : accentColor,
-    }"
-    @mouseenter="hovered = true"
-    @mouseleave="hovered = false"
-    ref="cardEl"
-    @click="emit('select', movie, cardEl?.getBoundingClientRect())"
-  >
+  <div class="card-wrap" :style="glowGradient ? { '--provider-gradient': glowGradient } : {}">
+    <div v-if="glowGradient" class="glow-ring"><div class="glow-ring-inner" /></div>
+    <div
+      class="card"
+      :class="{ expiring: showCountdown, 'multi-glow': glowGradient }"
+      :style="{
+        '--accent': accentColor,
+        '--glow': showCountdown && urgency === 'critical' ? '#ff4444' : showCountdown ? '#f0a030' : accentColor,
+      }"
+      @mouseenter="hovered = true"
+      @mouseleave="hovered = false"
+      ref="cardEl"
+      @click="emit('select', movie, cardEl?.getBoundingClientRect())"
+    >
     <!-- Poster -->
     <img
       v-if="poster"
@@ -109,8 +122,18 @@ const poster = props.movie.poster_path
         </div>
         <span v-else class="text-[11px] text-text-dim italic">No runtime</span>
 
-        <Transition name="meta">
-          <div v-if="hovered && movie.vote_average > 0" class="mt-2 flex items-center gap-2">
+        <div class="hover-reveal" :class="{ visible: hovered }">
+          <div v-if="multiService && providers.length" class="flex items-center gap-1.5 mt-1.5">
+            <span
+              v-for="prov in providers"
+              :key="prov.id"
+              class="provider-dot"
+              :style="{ background: prov.color }"
+              :title="prov.name"
+            />
+          </div>
+
+          <div v-if="movie.vote_average > 0" class="mt-2 flex items-center gap-2">
             <div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5">
               <span class="text-gold text-[10px]">&#9733;</span>
               <span class="text-text-secondary text-[11px] font-medium">{{ movie.vote_average.toFixed(1) }}</span>
@@ -119,8 +142,9 @@ const poster = props.movie.poster_path
               {{ movie.release_date.slice(0, 4) }}
             </span>
           </div>
-        </Transition>
+        </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -128,29 +152,81 @@ const poster = props.movie.poster_path
 <style scoped>
 @reference "../style.css";
 
+.card-wrap {
+  position: relative;
+  transform: translateY(0) scale(1);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-wrap:hover {
+  transform: translateY(-8px) scale(1.02);
+  z-index: 10;
+}
+
 .card {
   @apply relative rounded-xl overflow-hidden cursor-pointer bg-surface-raised;
   aspect-ratio: 2/3;
-  transform: translateY(0) scale(1);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
-.card:hover {
-  transform: translateY(-8px) scale(1.02);
+.provider-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 4px currentColor;
+  opacity: 0.8;
+}
+
+.card-wrap:hover .card {
   box-shadow:
     0 24px 48px rgba(0, 0, 0, 0.5),
     0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent),
     0 0 40px -8px color-mix(in srgb, var(--accent) 10%, transparent);
-  z-index: 10;
+}
+
+/* Multi-provider animated glow */
+.glow-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 14px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+.glow-ring-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: var(--provider-gradient);
+  filter: blur(14px);
+  animation: glow-spin 5s linear infinite;
+}
+.card-wrap:hover .glow-ring {
+  opacity: 0.7;
+}
+.card-wrap:hover .card.multi-glow {
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+@keyframes glow-spin {
+  from { rotate: 0deg; }
+  to { rotate: 360deg; }
 }
 
 .poster-img {
   @apply w-full h-full object-cover block;
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.card:hover .poster-img {
+.card-wrap:hover .poster-img {
   transform: scale(1.06);
 }
 
@@ -233,7 +309,7 @@ const poster = props.movie.poster_path
   opacity: 0;
   transition: opacity 0.3s;
 }
-.card:hover .shine { opacity: 1; }
+.card-wrap:hover .shine { opacity: 1; }
 
 .info {
   transform: translateY(0);
@@ -243,12 +319,27 @@ const poster = props.movie.poster_path
   transform: translateY(-4px);
 }
 
-/* Transitions */
-.meta-enter-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.meta-leave-active { transition: all 0.15s ease; }
-.meta-enter-from { opacity: 0; transform: translateY(6px); }
-.meta-leave-to { opacity: 0; }
+/* Hover reveal */
+.hover-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.3s ease,
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.hover-reveal > * {
+  min-height: 0;
+}
+.hover-reveal.visible {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
 
+/* Transitions */
 .badge-enter-active { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .badge-leave-active { transition: all 0.2s ease; }
 .badge-enter-from { opacity: 0; transform: scale(0.7) translateY(-6px); }
