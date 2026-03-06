@@ -127,7 +127,7 @@ const glowGradient = computed(() => {
             <img
               v-for="prov in providers"
               :key="prov.id"
-              :src="prov.logo"
+              :src="prov.logo ?? undefined"
               :alt="prov.name"
               :title="prov.name"
               class="provider-icon"
