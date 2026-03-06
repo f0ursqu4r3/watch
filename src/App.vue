@@ -115,7 +115,7 @@ watch([startTimeStr, endTimeStr], ([s, e]) => {
   if (s || e) {
     tickTimer = setInterval(() => { now.value = Date.now() }, 1000)
   }
-  if (!e) expiringFirst.value = false
+  if (!e || s) expiringFirst.value = false
 }, { immediate: true })
 
 onUnmounted(() => { if (tickTimer) clearInterval(tickTimer) })
@@ -459,7 +459,7 @@ function closeMovie() {
                 <option v-for="s in SORT_OPTIONS" :key="s.value" :value="s.value">{{ s.label }}</option>
               </select>
             </div>
-            <label v-if="endTimeStr" class="expiring-toggle" :style="{ '--c': providerColor }">
+            <label v-if="!startTimeStr && endTimeStr" class="expiring-toggle" :style="{ '--c': providerColor }">
               <input type="checkbox" v-model="expiringFirst" class="sr-only" />
               <span class="toggle-track" :class="{ on: expiringFirst }">
                 <span class="toggle-thumb" />
