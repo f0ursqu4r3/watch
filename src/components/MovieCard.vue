@@ -109,7 +109,7 @@ const glowGradient = computed(() => {
       <div class="shine" />
 
       <div class="info" :class="{ lifted: hovered }">
-        <p class="font-body text-[13px] font-semibold leading-snug text-text-primary mb-1.5 line-clamp-2">
+        <p class="font-body text-[13px] font-semibold leading-snug text-text-primary mb-1 line-clamp-2">
           {{ movie.title }}
         </p>
 
@@ -123,25 +123,27 @@ const glowGradient = computed(() => {
         <span v-else class="text-[11px] text-text-dim italic">No runtime</span>
 
         <div class="hover-reveal" :class="{ visible: hovered }">
-          <div v-if="multiService && providers.length" class="flex items-center gap-1 mt-1.5">
-            <img
-              v-for="prov in providers"
-              :key="prov.id"
-              :src="prov.logo ?? undefined"
-              :alt="prov.name"
-              :title="prov.name"
-              class="provider-icon"
-            />
-          </div>
-
-          <div v-if="movie.vote_average > 0" class="mt-2 flex items-center gap-2">
-            <div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5">
-              <span class="text-gold text-[10px]">&#9733;</span>
-              <span class="text-text-secondary text-[11px] font-medium">{{ movie.vote_average.toFixed(1) }}</span>
+          <div>
+            <div v-if="multiService && providers.length" class="flex items-center gap-1 mt-1.5">
+              <img
+                v-for="prov in providers"
+                :key="prov.id"
+                :src="prov.logo ?? undefined"
+                :alt="prov.name"
+                :title="prov.name"
+                class="provider-icon"
+              />
             </div>
-            <span v-if="movie.release_date" class="text-text-dim text-[11px]">
-              {{ movie.release_date.slice(0, 4) }}
-            </span>
+
+            <div v-if="movie.vote_average > 0" class="mt-2 flex items-center gap-2">
+              <div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5">
+                <span class="text-gold text-[10px]">&#9733;</span>
+                <span class="text-text-secondary text-[11px] font-medium">{{ movie.vote_average.toFixed(1) }}</span>
+              </div>
+              <span v-if="movie.release_date" class="text-text-muted text-[11px]">
+                {{ movie.release_date.slice(0, 4) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -257,38 +259,40 @@ const glowGradient = computed(() => {
 .countdown-badge {
   @apply absolute top-2.5 right-2.5 px-2 py-1 rounded-lg z-3
          font-mono text-[10px] font-medium tabular-nums tracking-wider;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 .countdown-badge.normal .countdown-time { @apply text-text-secondary; }
 .countdown-badge.warning {
-  border-color: rgba(240, 160, 48, 0.15);
-  background: rgba(240, 160, 48, 0.08);
+  border-color: rgba(240, 160, 48, 0.25);
+  background: rgba(20, 12, 0, 0.85);
 }
 .countdown-badge.warning .countdown-time { color: #e8a030; }
 .countdown-badge.critical {
-  border-color: rgba(255, 68, 68, 0.2);
-  background: rgba(255, 68, 68, 0.08);
+  border-color: rgba(255, 68, 68, 0.3);
+  background: rgba(30, 5, 5, 0.88);
   animation: badge-pulse 2s ease-in-out infinite;
 }
 .countdown-badge.critical .countdown-time { color: #ff5555; }
 
 @keyframes badge-pulse {
-  0%, 100% { background: rgba(255, 68, 68, 0.08); }
-  50% { background: rgba(255, 68, 68, 0.15); }
+  0%, 100% { background: rgba(30, 5, 5, 0.88); }
+  50% { background: rgba(40, 8, 8, 0.92); }
 }
 
 /* Overlay */
 .overlay {
   @apply absolute inset-0 flex flex-col justify-end;
-  padding: 16px;
+  padding: 14px 14px 12px;
   background: linear-gradient(
     to top,
-    rgba(6, 10, 14, 0.92) 0%,
-    rgba(6, 10, 14, 0.4) 40%,
-    rgba(6, 10, 14, 0.05) 65%,
+    rgba(6, 10, 14, 0.97) 0%,
+    rgba(6, 10, 14, 0.85) 25%,
+    rgba(6, 10, 14, 0.4) 50%,
+    rgba(6, 10, 14, 0.05) 70%,
     transparent 100%
   );
   transition: background 0.4s ease;
@@ -296,9 +300,10 @@ const glowGradient = computed(() => {
 .overlay.hovered {
   background: linear-gradient(
     to top,
-    rgba(6, 10, 14, 0.97) 0%,
-    rgba(6, 10, 14, 0.7) 45%,
-    rgba(6, 10, 14, 0.2) 70%,
+    rgba(6, 10, 14, 0.98) 0%,
+    rgba(6, 10, 14, 0.9) 30%,
+    rgba(6, 10, 14, 0.5) 55%,
+    rgba(6, 10, 14, 0.15) 75%,
     transparent 100%
   );
 }
