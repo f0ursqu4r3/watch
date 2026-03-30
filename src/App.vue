@@ -2,6 +2,14 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import MovieCard from './components/MovieCard.vue'
 import MovieModal from './components/MovieModal.vue'
+import { MOODS } from './data/moods'
+import {
+  Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain,
+} from 'lucide-vue-next'
+
+const moodIcons: Record<string, any> = {
+  Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain,
+}
 
 const TMDB_TOKEN = import.meta.env.VITE_TMDB_TOKEN
 
@@ -83,6 +91,7 @@ watch(selectedProviders, (v) => {
   localStorage.setItem('watch:providers', JSON.stringify([...v]))
 })
 const selectedGenre = ref<number | null>(null)
+const selectedMood = ref<string | null>(null)
 const sortBy = ref("popularity.desc")
 const expiringFirst = ref(false)
 const startTimeStr = ref("")
@@ -222,6 +231,12 @@ async function fetchPage(providerIds: string, pg: number) {
   const apiSort = clientSorts.includes(sortBy.value) ? 'popularity.desc' : sortBy.value
   let url = `https://api.themoviedb.org/3/discover/movie?with_watch_providers=${providerIds}&watch_region=US&sort_by=${apiSort}&page=${pg}&with_original_language=en`
   if (selectedGenre.value) url += `&with_genres=${selectedGenre.value}`
+  if (selectedMood.value) {
+    const mood = MOODS.find(m => m.id === selectedMood.value)
+    if (mood && mood.keywordIds.length > 0) {
+      url += `&with_keywords=${mood.keywordIds.join('|')}`
+    }
+  }
   if (personFilter.value) url += `&with_people=${personFilter.value.id}`
   if (sortBy.value === "vote_average.desc") url += `&vote_count.gte=200`
   const res = await fetch(url, { headers })
@@ -279,6 +294,19 @@ function toggleGenre(id: number) {
   selectedGenre.value = selectedGenre.value === id ? null : id
 }
 
+function selectMood(moodId: string) {
+  if (selectedMood.value === moodId) {
+    selectedMood.value = null
+    selectedGenre.value = null
+    return
+  }
+  selectedMood.value = moodId
+  const mood = MOODS.find(m => m.id === moodId)
+  if (mood) {
+    selectedGenre.value = mood.genreIds[0] ?? null
+  }
+}
+
 function refetch() {
   if (hasProviders.value) {
     movies.value = []
@@ -291,7 +319,7 @@ watch(selectedProviders, () => {
   if (hasProviders.value) refetch()
   else { movies.value = []; hasMore.value = false }
 }, { immediate: true })
-watch([selectedGenre, sortBy, personFilter], () => { refetch() })
+watch([selectedGenre, sortBy, personFilter, selectedMood], () => { refetch() })
 
 function searchPerson(person: { id: number; name: string }) {
   personFilter.value = person
@@ -433,6 +461,23 @@ function closeMovie() {
       <Transition name="slide-fade">
         <div v-if="hasProviders" class="grid grid-cols-[1fr_auto] gap-10 items-start mb-12 pb-10 border-b border-border-subtle max-sm:grid-cols-1 max-sm:gap-8">
           <div>
+            <!-- Mood row -->
+            <div class="mb-6">
+              <p class="control-label">Mood</p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="mood in MOODS"
+                  :key="mood.id"
+                  class="pill-btn pill-sm"
+                  :class="{ active: selectedMood === mood.id }"
+                  :style="{ '--c': 'var(--color-gold)' }"
+                  @click="selectMood(mood.id)"
+                >
+                  <component :is="moodIcons[mood.icon]" :size="14" />
+                  {{ mood.label }}
+                </button>
+              </div>
+            </div>
             <p class="control-label">Genre</p>
             <div class="flex flex-wrap gap-2">
               <button
