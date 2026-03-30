@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Gem } from 'lucide-vue-next'
+import { Gem, Bookmark, BookmarkCheck } from 'lucide-vue-next'
 
 const props = defineProps<{
   movie: any
@@ -11,9 +11,10 @@ const props = defineProps<{
   providers: { id: number; name: string; color: string; logo: string | null; link: string | null }[]
   multiService: boolean
   isHiddenGem: boolean
+  isInWatchlist: boolean
 }>()
 
-const emit = defineEmits<{ select: [movie: any, rect?: DOMRect] }>()
+const emit = defineEmits<{ select: [movie: any, rect?: DOMRect]; 'toggle-watchlist': [movie: any] }>()
 const hovered = ref(false)
 const cardEl = ref<HTMLElement | null>(null)
 
@@ -83,6 +84,11 @@ const glowGradient = computed(() => {
       ref="cardEl"
       @click="emit('select', movie, cardEl?.getBoundingClientRect())"
     >
+    <button class="bookmark-btn" :class="{ saved: isInWatchlist, visible: hovered || isInWatchlist }" @click.stop="emit('toggle-watchlist', movie)">
+      <BookmarkCheck v-if="isInWatchlist" :size="16" />
+      <Bookmark v-else :size="16" />
+    </button>
+
     <!-- Poster -->
     <img
       v-if="poster"
@@ -360,6 +366,21 @@ const glowGradient = computed(() => {
 .badge-leave-to { opacity: 0; transform: scale(0.8); }
 
 /* Gem badge */
+/* Bookmark button */
+.bookmark-btn {
+  @apply absolute top-2.5 left-2.5 z-4 w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer border-0 transition-all duration-300;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--color-text-muted);
+  opacity: 0;
+  transform: scale(0.8);
+}
+.bookmark-btn.visible { opacity: 1; transform: scale(1); }
+.bookmark-btn.saved { color: var(--color-gold); opacity: 1; transform: scale(1); }
+.bookmark-btn:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.1); }
+@media (max-width: 640px) { .bookmark-btn.saved { opacity: 1; transform: scale(1); } }
+
 .gem-badge {
   @apply absolute top-2.5 z-3 flex items-center gap-1 px-1.5 py-0.5 rounded;
   left: 10px;

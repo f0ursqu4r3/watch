@@ -5,7 +5,9 @@ import MovieModal from './components/MovieModal.vue'
 import { MOODS } from './data/moods'
 import {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain, Gem,
+  Bookmark,
 } from 'lucide-vue-next'
+import { useWatchlist } from './composables/useWatchlist'
 
 const moodIcons: Record<string, any> = {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain,
@@ -105,6 +107,9 @@ const hasMore = ref(false)
 const loadingMore = ref(false)
 const personFilter = ref<{ id: number; name: string } | null>(null)
 
+const { watchlist, isInWatchlist, toggleWatchlist } = useWatchlist()
+const activeTab = ref<'discover' | 'my-list'>('discover')
+
 const timeOptions = (() => {
   const opts: string[] = []
   const now = new Date()
@@ -169,6 +174,24 @@ const filtered = computed(() => {
   }
   if (expiringFirst.value && maxRuntimeMinutes.value != null) {
     result = [...result].sort((a, b) => (b.runtime ?? 0) - (a.runtime ?? 0))
+  }
+  return result
+})
+
+const watchlistFiltered = computed(() => {
+  if (activeTab.value !== 'my-list') return []
+  let result = watchlist.value.map(entry => {
+    const fullMovie = movies.value.find(m => m.id === entry.id)
+    return fullMovie ?? {
+      id: entry.id,
+      title: entry.title,
+      poster_path: entry.posterPath,
+      runtime: entry.runtime,
+      vote_average: entry.voteAverage,
+    }
+  })
+  if (maxRuntimeMinutes.value != null) {
+    result = result.filter(m => m.runtime && m.runtime <= maxRuntimeMinutes.value!)
   }
   return result
 })
@@ -418,6 +441,14 @@ function closeMovie() {
         <div class="w-12 h-px bg-border mx-auto mt-8" />
       </header>
 
+      <nav class="flex items-center gap-0 mb-10 border-b border-border-subtle">
+        <button class="tab-btn" :class="{ active: activeTab === 'discover' }" :style="{ '--c': providerColor }" @click="activeTab = 'discover'">DISCOVER</button>
+        <button class="tab-btn" :class="{ active: activeTab === 'my-list' }" :style="{ '--c': 'var(--color-gold)' }" @click="activeTab = 'my-list'">
+          MY LIST
+          <span v-if="watchlist.length" class="tab-count">{{ watchlist.length }}</span>
+        </button>
+      </nav>
+
       <!-- ═══ Controls ═══ -->
       <div class="grid grid-cols-[1fr_auto] gap-10 items-start mb-12 max-sm:grid-cols-1 max-sm:gap-8">
         <div>
@@ -586,7 +617,7 @@ function closeMovie() {
       </Transition>
 
       <!-- ═══ Results ═══ -->
-      <template v-if="!loading && hasProviders">
+      <template v-if="!loading && hasProviders && activeTab === 'discover'">
         <div v-if="endTimeStr" class="flex items-end gap-4 mb-8">
           <span
             class="font-display text-5xl font-bold leading-none tracking-tight"
@@ -628,7 +659,9 @@ function closeMovie() {
             :providers="movieProviders(movie)"
             :multi-service="selectedProviders.size > 1"
             :is-hidden-gem="isHiddenGem(movie)"
+            :is-in-watchlist="isInWatchlist(movie.id)"
             @select="openMovie"
+            @toggle-watchlist="toggleWatchlist"
           />
         </TransitionGroup>
 
@@ -640,9 +673,19 @@ function closeMovie() {
           </Transition>
         </div>
       </template>
+
+      <template v-if="activeTab === 'my-list'">
+        <div v-if="watchlistFiltered.length === 0" class="text-center py-20">
+          <Bookmark :size="32" class="mx-auto mb-4 text-text-dim" />
+          <p class="text-text-dim text-sm font-display italic">Your list is empty. Bookmark movies to save them here.</p>
+        </div>
+        <TransitionGroup v-else name="grid" tag="div" class="grid grid-cols-[repeat(auto-fill,minmax(175px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(135px,1fr))] max-sm:gap-3">
+          <MovieCard v-for="movie in watchlistFiltered" :key="movie.id" :movie="movie" :accent-color="providerColor" :deadline-ms="deadlineMs" :now="now" :start-at="effectiveStartMs" :providers="movieProviders(movie)" :multi-service="selectedProviders.size > 1" :is-hidden-gem="isHiddenGem(movie)" :is-in-watchlist="isInWatchlist(movie.id)" @select="openMovie" @toggle-watchlist="toggleWatchlist" />
+        </TransitionGroup>
+      </template>
     </div>
 
-    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :deadline-ms="deadlineMs" :providers="movieProviders(selectedMovie)" @close="closeMovie" @search-person="searchPerson" />
+    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :deadline-ms="deadlineMs" :providers="movieProviders(selectedMovie)" :is-in-watchlist="isInWatchlist(selectedMovie.id)" @close="closeMovie" @search-person="searchPerson" @toggle-watchlist="toggleWatchlist" />
   </div>
 </template>
 
@@ -809,4 +852,18 @@ function closeMovie() {
 .modal-leave-active { transition: opacity 0.25s ease; }
 .modal-enter-from,
 .modal-leave-to { @apply opacity-0; }
+
+/* ═══ Tab navigation ═══ */
+.tab-btn {
+  @apply px-5 py-3 text-[11px] tracking-[3px] uppercase font-medium cursor-pointer
+         bg-transparent border-0 border-b-2 border-transparent text-text-dim;
+  transition: all 0.3s ease;
+}
+.tab-btn:hover { color: var(--color-text-muted); }
+.tab-btn.active { color: var(--c); border-bottom-color: var(--c); }
+.tab-count {
+  @apply ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full;
+  background: color-mix(in srgb, var(--color-gold) 15%, transparent);
+  color: var(--color-gold);
+}
 </style>

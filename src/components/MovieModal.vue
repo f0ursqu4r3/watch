@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { Bookmark, BookmarkCheck } from 'lucide-vue-next'
 
 const props = defineProps<{
   movie: any
@@ -8,9 +9,10 @@ const props = defineProps<{
   startAt: number | null
   deadlineMs: number | null
   providers: { id: number; name: string; color: string; logo: string | null; link: string | null }[]
+  isInWatchlist: boolean
 }>()
 
-const emit = defineEmits<{ close: []; 'search-person': [person: { id: number; name: string }] }>()
+const emit = defineEmits<{ close: []; 'search-person': [person: { id: number; name: string }]; 'toggle-watchlist': [movie: any] }>()
 const backdropEl = ref<HTMLElement | null>(null)
 const modalCardEl = ref<HTMLElement | null>(null)
 const animating = ref(false)
@@ -293,6 +295,11 @@ onUnmounted(() => {
                 </a>
               </div>
             </div>
+            <button class="watchlist-btn mt-3" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
+              <BookmarkCheck v-if="isInWatchlist" :size="14" />
+              <Bookmark v-else :size="14" />
+              {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
+            </button>
           </div>
 
           <!-- Overview -->
@@ -542,6 +549,22 @@ onUnmounted(() => {
 .trailer-btn:hover {
   background: color-mix(in srgb, var(--accent) 15%, transparent);
   border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* Watchlist button */
+.watchlist-btn {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium cursor-pointer border transition-all duration-300;
+  background: color-mix(in srgb, var(--color-gold) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 15%, transparent);
+  color: var(--color-gold);
+}
+.watchlist-btn:hover {
+  background: color-mix(in srgb, var(--color-gold) 15%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 25%, transparent);
+}
+.watchlist-btn.saved {
+  background: color-mix(in srgb, var(--color-gold) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 25%, transparent);
 }
 
 /* Backdrop fade */
