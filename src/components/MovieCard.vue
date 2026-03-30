@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { Gem } from 'lucide-vue-next'
 
 const props = defineProps<{
   movie: any
@@ -9,6 +10,7 @@ const props = defineProps<{
   startAt: number
   providers: { id: number; name: string; color: string; logo: string | null; link: string | null }[]
   multiService: boolean
+  isHiddenGem: boolean
 }>()
 
 const emit = defineEmits<{ select: [movie: any, rect?: DOMRect] }>()
@@ -102,6 +104,12 @@ const glowGradient = computed(() => {
         <span class="countdown-time">{{ fmtCountdown(countdownSecs!) }}</span>
       </div>
     </Transition>
+
+    <!-- Gem badge -->
+    <div v-if="isHiddenGem" class="gem-badge">
+      <Gem :size="10" />
+      <span>GEM</span>
+    </div>
 
     <!-- Overlay -->
     <div class="overlay" :class="{ hovered }">
@@ -350,4 +358,18 @@ const glowGradient = computed(() => {
 .badge-leave-active { transition: all 0.2s ease; }
 .badge-enter-from { opacity: 0; transform: scale(0.7) translateY(-6px); }
 .badge-leave-to { opacity: 0; transform: scale(0.8); }
+
+/* Gem badge */
+.gem-badge {
+  @apply absolute top-2.5 z-3 flex items-center gap-1 px-1.5 py-0.5 rounded;
+  left: 10px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #1CE783;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(28, 231, 131, 0.25);
+}
 </style>

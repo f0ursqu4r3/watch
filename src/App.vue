@@ -4,7 +4,7 @@ import MovieCard from './components/MovieCard.vue'
 import MovieModal from './components/MovieModal.vue'
 import { MOODS } from './data/moods'
 import {
-  Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain,
+  Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain, Gem,
 } from 'lucide-vue-next'
 
 const moodIcons: Record<string, any> = {
@@ -92,6 +92,7 @@ watch(selectedProviders, (v) => {
 })
 const selectedGenre = ref<number | null>(null)
 const selectedMood = ref<string | null>(null)
+const hiddenGemsOnly = ref(false)
 const sortBy = ref("popularity.desc")
 const expiringFirst = ref(false)
 const startTimeStr = ref("")
@@ -158,6 +159,9 @@ const filtered = computed(() => {
   let result = maxRuntimeMinutes.value != null
     ? movies.value.filter((m) => m.runtime && m.runtime <= maxRuntimeMinutes.value!)
     : movies.value
+  if (hiddenGemsOnly.value) {
+    result = result.filter((m) => m.popularity < 50)
+  }
   if (sortBy.value === 'runtime.asc') {
     result = [...result].sort((a, b) => (a.runtime ?? Infinity) - (b.runtime ?? Infinity))
   } else if (sortBy.value === 'runtime.desc') {
@@ -239,6 +243,12 @@ async function fetchPage(providerIds: string, pg: number) {
   }
   if (personFilter.value) url += `&with_people=${personFilter.value.id}`
   if (sortBy.value === "vote_average.desc") url += `&vote_count.gte=200`
+  if (hiddenGemsOnly.value) {
+    url += `&vote_average.gte=7.5&vote_count.gte=50`
+    if (apiSort === 'popularity.desc') {
+      url = url.replace('sort_by=popularity.desc', 'sort_by=vote_average.desc')
+    }
+  }
   const res = await fetch(url, { headers })
   const data = await res.json()
   if (!res.ok) throw new Error(data.status_message || "API error")
@@ -307,6 +317,10 @@ function selectMood(moodId: string) {
   }
 }
 
+function isHiddenGem(movie: any): boolean {
+  return movie.vote_average >= 7.5 && movie.popularity < 50 && movie.vote_count >= 50
+}
+
 function refetch() {
   if (hasProviders.value) {
     movies.value = []
@@ -319,7 +333,7 @@ watch(selectedProviders, () => {
   if (hasProviders.value) refetch()
   else { movies.value = []; hasMore.value = false }
 }, { immediate: true })
-watch([selectedGenre, sortBy, personFilter, selectedMood], () => { refetch() })
+watch([selectedGenre, sortBy, personFilter, selectedMood, hiddenGemsOnly], () => { refetch() })
 
 function searchPerson(person: { id: number; name: string }) {
   personFilter.value = person
@@ -504,6 +518,15 @@ function closeMovie() {
                 <option v-for="s in SORT_OPTIONS" :key="s.value" :value="s.value">{{ s.label }}</option>
               </select>
             </div>
+            <button
+              class="pill-btn pill-sm"
+              :class="{ active: hiddenGemsOnly }"
+              :style="{ '--c': '#1CE783' }"
+              @click="hiddenGemsOnly = !hiddenGemsOnly"
+            >
+              <Gem :size="14" />
+              Hidden Gems
+            </button>
             <label v-if="!startTimeStr && endTimeStr" class="expiring-toggle" :style="{ '--c': providerColor }">
               <input type="checkbox" v-model="expiringFirst" class="sr-only" />
               <span class="toggle-track" :class="{ on: expiringFirst }">
@@ -604,6 +627,7 @@ function closeMovie() {
             :start-at="effectiveStartMs"
             :providers="movieProviders(movie)"
             :multi-service="selectedProviders.size > 1"
+            :is-hidden-gem="isHiddenGem(movie)"
             @select="openMovie"
           />
         </TransitionGroup>
