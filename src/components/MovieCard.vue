@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Gem, Bookmark, BookmarkCheck } from 'lucide-vue-next'
+import { Gem, Bookmark, BookmarkCheck, Play, VolumeX, Volume2 } from 'lucide-vue-next'
 
 const props = defineProps<{
   movie: any
@@ -60,6 +60,68 @@ const poster = props.movie.poster_path
   ? `https://image.tmdb.org/t/p/w342${props.movie.poster_path}`
   : null
 
+const showTrailer = ref(false)
+const trailerMuted = ref(true)
+const trailerLoading = ref(false)
+let hoverTimer: ReturnType<typeof setTimeout> | null = null
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+
+const trailerKey = computed(() => {
+  const vids = props.movie.videos?.results || []
+  const trailer = vids.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
+    || vids.find((v: any) => v.site === 'YouTube')
+  return trailer?.key ?? null
+})
+
+const backdropUrl = computed(() =>
+  props.movie.backdrop_path
+    ? `https://image.tmdb.org/t/p/w780${props.movie.backdrop_path}`
+    : null
+)
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+function startHoverPreview() {
+  if (prefersReducedMotion || showTrailer.value) return
+  hoverTimer = setTimeout(() => {
+    showTrailer.value = true
+    trailerLoading.value = true
+  }, 800)
+}
+
+function stopHoverPreview() {
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
+  showTrailer.value = false
+  trailerMuted.value = true
+  trailerLoading.value = false
+}
+
+function onTouchStart() {
+  if (prefersReducedMotion) return
+  longPressTimer = setTimeout(() => {
+    showTrailer.value = true
+    trailerLoading.value = true
+  }, 500)
+}
+
+function onTouchEnd() {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null }
+  if (showTrailer.value) {
+    showTrailer.value = false
+    trailerMuted.value = true
+    trailerLoading.value = false
+  }
+}
+
+function onTrailerLoad() {
+  trailerLoading.value = false
+}
+
+function toggleMute(e: Event) {
+  e.stopPropagation()
+  trailerMuted.value = !trailerMuted.value
+}
+
 const glowGradient = computed(() => {
   const colors = props.providers.map(p => p.color)
   if (colors.length <= 1) return null
@@ -79,8 +141,11 @@ const glowGradient = computed(() => {
         '--accent': accentColor,
         '--glow': showCountdown && urgency === 'critical' ? '#ff4444' : showCountdown ? '#f0a030' : accentColor,
       }"
-      @mouseenter="hovered = true"
-      @mouseleave="hovered = false"
+      @mouseenter="hovered = true; startHoverPreview()"
+      @mouseleave="hovered = false; stopHoverPreview()"
+      @touchstart.passive="onTouchStart"
+      @touchend.passive="onTouchEnd"
+      @touchcancel.passive="onTouchEnd"
       ref="cardEl"
       @click="emit('select', movie, cardEl?.getBoundingClientRect())"
     >
@@ -100,6 +165,38 @@ const glowGradient = computed(() => {
     <div v-else class="no-poster">
       <span class="font-display italic text-text-dim text-sm leading-snug">{{ movie.title }}</span>
     </div>
+
+    <!-- Trailer preview overlay -->
+    <Transition name="trailer">
+      <div v-if="showTrailer" class="trailer-overlay" @click.stop>
+        <iframe
+          v-if="trailerKey"
+          :src="`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=${trailerMuted ? 1 : 0}&controls=0&modestbranding=1&rel=0&showinfo=0&start=0&end=15&loop=1`"
+          class="trailer-iframe"
+          allow="autoplay; encrypted-media"
+          @load="onTrailerLoad"
+        />
+        <!-- Fallback: Ken Burns backdrop -->
+        <div v-else-if="backdropUrl" class="trailer-fallback">
+          <img :src="backdropUrl" class="ken-burns-img" />
+          <div class="fallback-overlay">
+            <p class="font-body text-xs font-semibold text-text-primary">{{ movie.title }}</p>
+            <p v-if="movie.vote_average" class="text-[10px] text-text-secondary mt-1">
+              <span class="text-gold">&#9733;</span> {{ movie.vote_average.toFixed(1) }}
+            </p>
+          </div>
+        </div>
+        <!-- Loading indicator -->
+        <div v-if="trailerLoading" class="trailer-loading">
+          <Play :size="20" class="text-white/60" />
+        </div>
+        <!-- Mute toggle -->
+        <button v-if="trailerKey && !trailerLoading" class="mute-btn" @click="toggleMute">
+          <VolumeX v-if="trailerMuted" :size="12" />
+          <Volume2 v-else :size="12" />
+        </button>
+      </div>
+    </Transition>
 
     <!-- Expiring border glow -->
     <div v-if="showCountdown" class="expiring-glow" :class="urgency" />
@@ -393,4 +490,50 @@ const glowGradient = computed(() => {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(28, 231, 131, 0.25);
 }
+
+/* Trailer preview */
+.trailer-overlay {
+  @apply absolute inset-0 z-2 overflow-hidden rounded-xl;
+  background: black;
+}
+.trailer-iframe {
+  @apply absolute inset-0 w-full h-full border-0;
+  pointer-events: none;
+}
+.trailer-fallback {
+  @apply relative w-full h-full overflow-hidden;
+}
+.ken-burns-img {
+  @apply w-full h-full object-cover;
+  animation: ken-burns 10s ease-in-out infinite;
+}
+@keyframes ken-burns {
+  0% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.15) translate(-2%, -2%); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+.fallback-overlay {
+  @apply absolute inset-0 flex flex-col items-center justify-center text-center p-4;
+  background: rgba(0, 0, 0, 0.5);
+}
+.trailer-loading {
+  @apply absolute inset-0 flex items-center justify-center;
+  background: rgba(0, 0, 0, 0.3);
+}
+.mute-btn {
+  @apply absolute bottom-2 right-2 z-5 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer border-0;
+  background: rgba(0, 0, 0, 0.7);
+  color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+}
+.mute-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+}
+
+.trailer-enter-active { transition: opacity 0.3s ease; }
+.trailer-leave-active { transition: opacity 0.2s ease; }
+.trailer-enter-from,
+.trailer-leave-to { opacity: 0; }
 </style>
