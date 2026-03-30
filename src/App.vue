@@ -413,6 +413,25 @@ function setupObserver() {
 setupObserver()
 onUnmounted(() => { observer?.disconnect() })
 
+const displayCount = ref(0)
+let countFrame: number | null = null
+watch(() => filtered.value.length, (target) => {
+  if (countFrame) cancelAnimationFrame(countFrame)
+  const start = displayCount.value
+  const diff = target - start
+  if (diff === 0) return
+  const duration = Math.min(400, Math.abs(diff) * 15)
+  const startTime = performance.now()
+  function step(now: number) {
+    const elapsed = now - startTime
+    const progress = Math.min(elapsed / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3)
+    displayCount.value = Math.round(start + diff * eased)
+    if (progress < 1) countFrame = requestAnimationFrame(step)
+  }
+  countFrame = requestAnimationFrame(step)
+})
+
 const selectedMovie = ref<any>(null)
 const flipOrigin = ref<{ x: number; y: number; w: number; h: number } | null>(null)
 
@@ -659,7 +678,7 @@ function closeMovie() {
               ? { backgroundImage: providerGradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }
               : { color: providerColor }"
           >
-            {{ filtered.length }}
+            {{ displayCount }}
           </span>
           <div class="pb-1.5">
             <span class="text-text-muted text-[13px]">

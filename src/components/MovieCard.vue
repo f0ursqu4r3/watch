@@ -17,6 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{ select: [movie: any, rect?: DOMRect]; 'toggle-watchlist': [movie: any] }>()
 const hovered = ref(false)
 const cardEl = ref<HTMLElement | null>(null)
+const justBookmarked = ref(false)
 
 function fmtRuntime(min: number) {
   const h = Math.floor(min / 60)
@@ -60,6 +61,14 @@ const poster = props.movie.poster_path
   ? `https://image.tmdb.org/t/p/w342${props.movie.poster_path}`
   : null
 
+function onBookmark() {
+  emit('toggle-watchlist', props.movie)
+  if (!props.isInWatchlist) {
+    justBookmarked.value = true
+    setTimeout(() => { justBookmarked.value = false }, 600)
+  }
+}
+
 const glowGradient = computed(() => {
   const colors = props.providers.map(p => p.color)
   if (colors.length <= 1) return null
@@ -84,7 +93,11 @@ const glowGradient = computed(() => {
       ref="cardEl"
       @click="emit('select', movie, cardEl?.getBoundingClientRect())"
     >
-    <button class="bookmark-btn" :class="{ saved: isInWatchlist, visible: hovered || isInWatchlist }" @click.stop="emit('toggle-watchlist', movie)">
+    <button
+      class="bookmark-btn"
+      :class="{ saved: isInWatchlist, visible: hovered || isInWatchlist, pop: justBookmarked }"
+      @click.stop="onBookmark"
+    >
       <BookmarkCheck v-if="isInWatchlist" :size="16" />
       <Bookmark v-else :size="16" />
     </button>
@@ -378,6 +391,14 @@ const glowGradient = computed(() => {
 .bookmark-btn.visible { opacity: 1; transform: scale(1); }
 .bookmark-btn.saved { color: var(--color-gold); opacity: 1; transform: scale(1); }
 .bookmark-btn:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.1); }
+.bookmark-btn.pop {
+  animation: bookmark-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes bookmark-pop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
 .bookmark-btn:focus-visible {
   opacity: 1;
   transform: scale(1);
@@ -399,6 +420,21 @@ const glowGradient = computed(() => {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(28, 231, 131, 0.25);
+  overflow: hidden;
+}
+.gem-badge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(28, 231, 131, 0.15) 50%, transparent 100%);
+  animation: gem-shimmer 3s ease-in-out infinite;
+}
+@keyframes gem-shimmer {
+  0%, 100% { left: -100%; }
+  50% { left: 100%; }
 }
 
 </style>
