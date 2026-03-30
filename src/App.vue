@@ -5,9 +5,10 @@ import MovieModal from './components/MovieModal.vue'
 import { MOODS } from './data/moods'
 import {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain, Gem,
-  Bookmark,
+  Bookmark, Volume2, VolumeX,
 } from 'lucide-vue-next'
 import { useWatchlist } from './composables/useWatchlist'
+import { useSound } from './composables/useSound'
 
 const moodIcons: Record<string, any> = {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain,
@@ -108,6 +109,7 @@ const loadingMore = ref(false)
 const personFilter = ref<{ id: number; name: string } | null>(null)
 
 const { watchlist, isInWatchlist, toggleWatchlist } = useWatchlist()
+const { soundEnabled, sounds, haptic } = useSound()
 const activeTab = ref<'discover' | 'my-list'>('discover')
 
 const timeOptions = (() => {
@@ -317,6 +319,8 @@ async function fetchMovies(providerIds: string, startPage = 1) {
 }
 
 function toggleProvider(p: typeof PROVIDERS[number]) {
+  sounds.filterChange()
+  haptic()
   const next = new Set(selectedProviders.value)
   if (next.has(p.id)) next.delete(p.id)
   else next.add(p.id)
@@ -324,10 +328,24 @@ function toggleProvider(p: typeof PROVIDERS[number]) {
 }
 
 function toggleGenre(id: number) {
+  sounds.filterChange()
+  haptic()
   selectedGenre.value = selectedGenre.value === id ? null : id
 }
 
+function handleToggleWatchlist(movie: any) {
+  const added = toggleWatchlist(movie)
+  if (added) {
+    sounds.watchlistAdd()
+  } else {
+    sounds.watchlistRemove()
+  }
+  haptic()
+}
+
 function selectMood(moodId: string) {
+  sounds.moodSelect()
+  haptic()
   if (selectedMood.value === moodId) {
     selectedMood.value = null
     selectedGenre.value = null
@@ -390,6 +408,7 @@ const selectedMovie = ref<any>(null)
 const flipOrigin = ref<{ x: number; y: number; w: number; h: number } | null>(null)
 
 function openMovie(movie: any, cardRect?: DOMRect) {
+  sounds.modalOpen()
   if (cardRect) {
     flipOrigin.value = { x: cardRect.left, y: cardRect.top, w: cardRect.width, h: cardRect.height }
   } else {
@@ -402,6 +421,7 @@ function openMovie(movie: any, cardRect?: DOMRect) {
 }
 
 function closeMovie() {
+  sounds.modalClose()
   selectedMovie.value = null
   flipOrigin.value = null
   document.body.style.overflow = ''
@@ -446,6 +466,11 @@ function closeMovie() {
         <button class="tab-btn" :class="{ active: activeTab === 'my-list' }" :style="{ '--c': 'var(--color-gold)' }" @click="activeTab = 'my-list'">
           MY LIST
           <span v-if="watchlist.length" class="tab-count">{{ watchlist.length }}</span>
+        </button>
+        <div class="flex-1" />
+        <button class="sound-toggle" @click="soundEnabled = !soundEnabled" :title="soundEnabled ? 'Mute sounds' : 'Enable sounds'">
+          <Volume2 v-if="soundEnabled" :size="16" />
+          <VolumeX v-else :size="16" />
         </button>
       </nav>
 
@@ -661,7 +686,7 @@ function closeMovie() {
             :is-hidden-gem="isHiddenGem(movie)"
             :is-in-watchlist="isInWatchlist(movie.id)"
             @select="openMovie"
-            @toggle-watchlist="toggleWatchlist"
+            @toggle-watchlist="handleToggleWatchlist"
           />
         </TransitionGroup>
 
@@ -680,12 +705,12 @@ function closeMovie() {
           <p class="text-text-dim text-sm font-display italic">Your list is empty. Bookmark movies to save them here.</p>
         </div>
         <TransitionGroup v-else name="grid" tag="div" class="grid grid-cols-[repeat(auto-fill,minmax(175px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(135px,1fr))] max-sm:gap-3">
-          <MovieCard v-for="movie in watchlistFiltered" :key="movie.id" :movie="movie" :accent-color="providerColor" :deadline-ms="deadlineMs" :now="now" :start-at="effectiveStartMs" :providers="movieProviders(movie)" :multi-service="selectedProviders.size > 1" :is-hidden-gem="isHiddenGem(movie)" :is-in-watchlist="isInWatchlist(movie.id)" @select="openMovie" @toggle-watchlist="toggleWatchlist" />
+          <MovieCard v-for="movie in watchlistFiltered" :key="movie.id" :movie="movie" :accent-color="providerColor" :deadline-ms="deadlineMs" :now="now" :start-at="effectiveStartMs" :providers="movieProviders(movie)" :multi-service="selectedProviders.size > 1" :is-hidden-gem="isHiddenGem(movie)" :is-in-watchlist="isInWatchlist(movie.id)" @select="openMovie" @toggle-watchlist="handleToggleWatchlist" />
         </TransitionGroup>
       </template>
     </div>
 
-    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :deadline-ms="deadlineMs" :providers="movieProviders(selectedMovie)" :is-in-watchlist="isInWatchlist(selectedMovie.id)" @close="closeMovie" @search-person="searchPerson" @toggle-watchlist="toggleWatchlist" />
+    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :deadline-ms="deadlineMs" :providers="movieProviders(selectedMovie)" :is-in-watchlist="isInWatchlist(selectedMovie.id)" @close="closeMovie" @search-person="searchPerson" @toggle-watchlist="handleToggleWatchlist" />
   </div>
 </template>
 
@@ -865,5 +890,14 @@ function closeMovie() {
   @apply ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full;
   background: color-mix(in srgb, var(--color-gold) 15%, transparent);
   color: var(--color-gold);
+}
+
+.sound-toggle {
+  @apply p-2 rounded-lg cursor-pointer border-0 bg-transparent transition-all duration-300;
+  color: var(--color-text-dim);
+}
+.sound-toggle:hover {
+  color: var(--color-text-muted);
+  background: var(--color-surface-alt);
 }
 </style>
