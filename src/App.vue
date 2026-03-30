@@ -700,9 +700,18 @@ function closeMovie() {
       </template>
 
       <template v-if="activeTab === 'my-list'">
-        <div v-if="watchlistFiltered.length === 0" class="text-center py-20">
-          <Bookmark :size="32" class="mx-auto mb-4 text-text-dim" />
-          <p class="text-text-dim text-sm font-display italic">Your list is empty. Bookmark movies to save them here.</p>
+        <div v-if="watchlistFiltered.length === 0" class="text-center pt-24 pb-20">
+          <div class="relative w-16 h-16 mx-auto mb-6">
+            <div class="absolute inset-0 rounded-full border border-border opacity-20" />
+            <div class="absolute inset-2 rounded-full border border-border opacity-30" />
+            <div class="absolute inset-0 flex items-center justify-center">
+              <Bookmark :size="24" class="text-text-dim" />
+            </div>
+          </div>
+          <p class="text-text-dim text-sm font-display italic mb-2">Nothing saved yet</p>
+          <p class="text-text-dim text-xs tracking-wide max-w-xs mx-auto leading-relaxed opacity-60">
+            Tap the bookmark on any movie to start building your list
+          </p>
         </div>
         <TransitionGroup v-else name="grid" tag="div" class="grid grid-cols-[repeat(auto-fill,minmax(175px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(135px,1fr))] max-sm:gap-3">
           <MovieCard v-for="movie in watchlistFiltered" :key="movie.id" :movie="movie" :accent-color="providerColor" :deadline-ms="deadlineMs" :now="now" :start-at="effectiveStartMs" :providers="movieProviders(movie)" :multi-service="selectedProviders.size > 1" :is-hidden-gem="isHiddenGem(movie)" :is-in-watchlist="isInWatchlist(movie.id)" @select="openMovie" @toggle-watchlist="handleToggleWatchlist" />
@@ -885,6 +894,11 @@ function closeMovie() {
   transition: all 0.3s ease;
 }
 .tab-btn:hover { color: var(--color-text-muted); }
+.tab-btn:focus-visible {
+  outline: none;
+  color: var(--c);
+  box-shadow: inset 0 -2px 0 var(--c);
+}
 .tab-btn.active { color: var(--c); border-bottom-color: var(--c); }
 .tab-count {
   @apply ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full;
@@ -899,5 +913,9 @@ function closeMovie() {
 .sound-toggle:hover {
   color: var(--color-text-muted);
   background: var(--color-surface-alt);
+}
+.sound-toggle:focus-visible {
+  outline: 2px solid var(--color-text-dim);
+  outline-offset: 2px;
 }
 </style>

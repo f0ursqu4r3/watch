@@ -294,12 +294,13 @@ onUnmounted(() => {
                   <svg v-if="prov.link" class="link-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
               </div>
+              <!-- Watchlist button -->
+              <button class="watchlist-btn mt-3" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
+                <BookmarkCheck v-if="isInWatchlist" :size="14" />
+                <Bookmark v-else :size="14" />
+                {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
+              </button>
             </div>
-            <button class="watchlist-btn mt-3" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
-              <BookmarkCheck v-if="isInWatchlist" :size="14" />
-              <Bookmark v-else :size="14" />
-              {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
-            </button>
           </div>
 
           <!-- Overview -->
@@ -417,10 +418,10 @@ onUnmounted(() => {
   50% { background: rgba(255, 68, 68, 0.15); }
 }
 
-.badge-enter-active { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.badge-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .badge-leave-active { transition: all 0.2s ease; }
-.badge-enter-from { opacity: 0; transform: scale(0.7) translateY(-6px); }
-.badge-leave-to { opacity: 0; transform: scale(0.8); }
+.badge-enter-from { opacity: 0; transform: scale(0.85) translateY(-4px); }
+.badge-leave-to { opacity: 0; transform: scale(0.9); }
 
 .hero-fade {
   @apply absolute inset-0;
@@ -565,6 +566,10 @@ onUnmounted(() => {
 .watchlist-btn.saved {
   background: color-mix(in srgb, var(--color-gold) 12%, transparent);
   border-color: color-mix(in srgb, var(--color-gold) 25%, transparent);
+}
+.watchlist-btn:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
 }
 
 /* Backdrop fade */

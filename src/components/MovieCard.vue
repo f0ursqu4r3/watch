@@ -360,12 +360,11 @@ const glowGradient = computed(() => {
 }
 
 /* Transitions */
-.badge-enter-active { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.badge-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .badge-leave-active { transition: all 0.2s ease; }
-.badge-enter-from { opacity: 0; transform: scale(0.7) translateY(-6px); }
-.badge-leave-to { opacity: 0; transform: scale(0.8); }
+.badge-enter-from { opacity: 0; transform: scale(0.85) translateY(-4px); }
+.badge-leave-to { opacity: 0; transform: scale(0.9); }
 
-/* Gem badge */
 /* Bookmark button */
 .bookmark-btn {
   @apply absolute top-2.5 left-2.5 z-4 w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer border-0 transition-all duration-300;
@@ -379,11 +378,19 @@ const glowGradient = computed(() => {
 .bookmark-btn.visible { opacity: 1; transform: scale(1); }
 .bookmark-btn.saved { color: var(--color-gold); opacity: 1; transform: scale(1); }
 .bookmark-btn:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.1); }
+.bookmark-btn:focus-visible {
+  opacity: 1;
+  transform: scale(1);
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
 @media (max-width: 640px) { .bookmark-btn.saved { opacity: 1; transform: scale(1); } }
 
+/* Gem badge */
 .gem-badge {
-  @apply absolute top-2.5 z-3 flex items-center gap-1 px-1.5 py-0.5 rounded;
-  left: 40px;
+  @apply absolute z-3 flex items-center gap-1 px-1.5 py-0.5 rounded;
+  top: 10px;
+  right: 10px;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 1px;
