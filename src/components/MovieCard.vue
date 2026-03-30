@@ -480,7 +480,7 @@ const glowGradient = computed(() => {
 
 .gem-badge {
   @apply absolute top-2.5 z-3 flex items-center gap-1 px-1.5 py-0.5 rounded;
-  left: 10px;
+  left: 40px;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 1px;

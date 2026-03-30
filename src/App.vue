@@ -609,7 +609,7 @@ function closeMovie() {
 
       <!-- ═══ Empty state ═══ -->
       <Transition name="fade" mode="out-in">
-        <div v-if="!hasProviders" class="text-center pt-28 max-sm:pt-20">
+        <div v-if="!hasProviders && activeTab === 'discover'" class="text-center pt-28 max-sm:pt-20">
           <div class="empty-rings">
             <div class="orbit ring-1" />
             <div class="orbit ring-2" />
@@ -623,7 +623,7 @@ function closeMovie() {
 
       <!-- ═══ Loading ═══ -->
       <Transition name="fade">
-        <div v-if="loading" class="text-center pt-28">
+        <div v-if="loading && activeTab === 'discover'" class="text-center pt-28">
           <div class="loading-bars">
             <span v-for="i in 5" :key="i" class="bar" :style="{ animationDelay: `${i * 0.1}s`, background: activeProviderColors[(i - 1) % activeProviderColors.length] }" />
           </div>
