@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Bookmark, BookmarkCheck } from 'lucide-vue-next'
+import { Bookmark, BookmarkCheck, ThumbsUp, ThumbsDown, CircleCheckBig } from 'lucide-vue-next'
 
 const props = defineProps<{
   movie: any
@@ -10,13 +10,41 @@ const props = defineProps<{
   deadlineMs: number | null
   providers: { id: number; name: string; color: string; logo: string | null; link: string | null }[]
   isInWatchlist: boolean
+  isWatched: boolean
+  watchedRating: 'loved' | 'good' | 'meh' | 'awful' | null
 }>()
 
-const emit = defineEmits<{ close: []; 'search-person': [person: { id: number; name: string }]; 'toggle-watchlist': [movie: any] }>()
+const emit = defineEmits<{ close: []; 'search-person': [person: { id: number; name: string }]; 'toggle-watchlist': [movie: any]; 'mark-watched': [movie: any, rating: 'loved' | 'good' | 'meh' | 'awful'] }>()
 const backdropEl = ref<HTMLElement | null>(null)
 const modalCardEl = ref<HTMLElement | null>(null)
 const animating = ref(false)
 const backdropVisible = ref(false)
+
+const showRatingPopover = ref(false)
+
+const RATING_OPTIONS = [
+  { key: 'awful' as const, color: '#ff5555', label: 'Awful', direction: 'down' as const, double: true },
+  { key: 'meh' as const, color: '#f0a030', label: 'Meh', direction: 'down' as const, double: false },
+  { key: 'good' as const, color: '#6cb4ee', label: 'Good', direction: 'up' as const, double: false },
+  { key: 'loved' as const, color: '#1CE783', label: 'Loved it', direction: 'up' as const, double: true },
+] as const
+
+const currentRatingConfig = computed(() => {
+  if (!props.watchedRating) return null
+  return RATING_OPTIONS.find(r => r.key === props.watchedRating) ?? null
+})
+
+function selectRating(rating: 'loved' | 'good' | 'meh' | 'awful') {
+  emit('mark-watched', props.movie, rating)
+  showRatingPopover.value = false
+}
+
+function onClickOutsidePopover(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.rating-popover') && !target.closest('.watched-btn')) {
+    showRatingPopover.value = false
+  }
+}
 
 const liveClock = ref(Date.now())
 let clockTimer: ReturnType<typeof setInterval> | null = null
@@ -113,7 +141,13 @@ function onBackdropClick(e: MouseEvent) {
 }
 
 function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape' && !animating.value) closeWithAnimation()
+  if (e.key === 'Escape') {
+    if (showRatingPopover.value) {
+      showRatingPopover.value = false
+      return
+    }
+    if (!animating.value) closeWithAnimation()
+  }
 }
 
 function closeWithAnimation() {
@@ -135,7 +169,7 @@ function closeWithAnimation() {
   const dx = (props.flipOrigin.x + props.flipOrigin.w / 2) - (modalRect.left + modalRect.width / 2)
   const dy = (props.flipOrigin.y + props.flipOrigin.h / 2) - (modalRect.top + modalRect.height / 2)
 
-  card.style.transition = 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, border-radius 0.45s ease'
+  card.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, border-radius 0.3s ease'
   card.style.transform = `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`
   card.style.opacity = '0.3'
   card.style.borderRadius = '12px'
@@ -145,7 +179,7 @@ function closeWithAnimation() {
   }, { once: true })
 
   // Safety timeout
-  setTimeout(() => emit('close'), 500)
+  setTimeout(() => emit('close'), 350)
 }
 
 function animateIn() {
@@ -194,6 +228,7 @@ function animateIn() {
 
 onMounted(() => {
   document.addEventListener('keydown', onKey)
+  document.addEventListener('click', onClickOutsidePopover)
   backdropEl.value?.focus()
   animateIn()
   if (props.startAt == null || props.deadlineMs) {
@@ -202,6 +237,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   document.removeEventListener('keydown', onKey)
+  document.removeEventListener('click', onClickOutsidePopover)
   if (clockTimer) clearInterval(clockTimer)
 })
 </script>
@@ -223,7 +259,7 @@ onUnmounted(() => {
       <div ref="modalCardEl" class="modal-card relative w-full max-w-[680px] overflow-hidden max-sm:max-w-full max-sm:rounded-b-none max-sm:max-h-[92vh] max-sm:overflow-y-auto">
         <!-- Close -->
         <button
-          class="absolute top-4 right-4 z-20 w-10 h-10 rounded-full border border-white/8 bg-black/40 backdrop-blur-xl text-text-muted cursor-pointer flex items-center justify-center transition-all duration-300 hover:bg-black/60 hover:text-white hover:border-white/15 hover:scale-110"
+          class="close-btn absolute top-4 right-4 z-20 w-10 h-10 rounded-full border border-white/8 bg-black/40 backdrop-blur-xl text-text-muted cursor-pointer flex items-center justify-center"
           @click="closeWithAnimation"
           aria-label="Close"
         >
@@ -300,6 +336,51 @@ onUnmounted(() => {
                 <Bookmark v-else :size="14" />
                 {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
               </button>
+              <!-- Mark Watched button -->
+              <div class="relative">
+                <button
+                  v-if="!isWatched"
+                  class="watched-btn mt-3"
+                  @click.stop="showRatingPopover = !showRatingPopover"
+                >
+                  <CircleCheckBig :size="14" />
+                  Mark Watched
+                </button>
+                <button
+                  v-else
+                  class="watched-btn mt-3 rated"
+                  :style="{ '--w-color': currentRatingConfig?.color }"
+                  @click.stop="showRatingPopover = !showRatingPopover"
+                >
+                  <component :is="currentRatingConfig?.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
+                  Watched
+                </button>
+
+                <!-- Rating popover -->
+                <Transition name="popover">
+                  <div v-if="showRatingPopover" class="rating-popover" role="dialog" aria-label="Rate this movie" @click.stop>
+                    <span class="popover-label">How was it?</span>
+                    <div class="popover-options">
+                      <button
+                        v-for="opt in RATING_OPTIONS"
+                        :key="opt.key"
+                        class="popover-rating-btn"
+                        :class="{ active: watchedRating === opt.key }"
+                        :style="{ '--r-color': opt.color }"
+                        :aria-label="opt.label"
+                        @click="selectRating(opt.key)"
+                      >
+                        <template v-if="opt.double">
+                          <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
+                          <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" style="margin-left: -4px" />
+                        </template>
+                        <component v-else :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="16" />
+                      </button>
+                    </div>
+                    <div class="popover-arrow" />
+                  </div>
+                </Transition>
+              </div>
             </div>
           </div>
 
@@ -420,7 +501,7 @@ onUnmounted(() => {
 
 .badge-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .badge-leave-active { transition: all 0.2s ease; }
-.badge-enter-from { opacity: 0; transform: scale(0.85) translateY(-4px); }
+.badge-enter-from { opacity: 0; transform: scale(0.92) translateY(-4px); }
 .badge-leave-to { opacity: 0; transform: scale(0.9); }
 
 .hero-fade {
@@ -503,16 +584,20 @@ onUnmounted(() => {
   border: 1px solid color-mix(in srgb, var(--prov-color) 15%, transparent);
   transition: background 0.2s, border-color 0.2s;
 }
-.streaming-pill.clickable:hover {
-  background: color-mix(in srgb, var(--prov-color) 18%, transparent);
-  border-color: color-mix(in srgb, var(--prov-color) 30%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .streaming-pill.clickable:hover {
+    background: color-mix(in srgb, var(--prov-color) 18%, transparent);
+    border-color: color-mix(in srgb, var(--prov-color) 30%, transparent);
+  }
 }
 .link-icon {
   opacity: 0.4;
   transition: opacity 0.2s;
 }
-.streaming-pill.clickable:hover .link-icon {
-  opacity: 0.8;
+@media (hover: hover) and (pointer: fine) {
+  .streaming-pill.clickable:hover .link-icon {
+    opacity: 0.8;
+  }
 }
 .streaming-logo {
   width: 16px;
@@ -544,17 +629,21 @@ onUnmounted(() => {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease;
   width: fit-content;
 }
 .trailer-btn:hover {
   background: color-mix(in srgb, var(--accent) 15%, transparent);
   border-color: color-mix(in srgb, var(--accent) 25%, transparent);
 }
+.trailer-btn:active {
+  transform: scale(0.97);
+}
 
 /* Watchlist button */
 .watchlist-btn {
-  @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium cursor-pointer border transition-all duration-300;
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium cursor-pointer border;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   background: color-mix(in srgb, var(--color-gold) 8%, transparent);
   border-color: color-mix(in srgb, var(--color-gold) 15%, transparent);
   color: var(--color-gold);
@@ -562,6 +651,9 @@ onUnmounted(() => {
 .watchlist-btn:hover {
   background: color-mix(in srgb, var(--color-gold) 15%, transparent);
   border-color: color-mix(in srgb, var(--color-gold) 25%, transparent);
+}
+.watchlist-btn:active {
+  transform: scale(0.97);
 }
 .watchlist-btn.saved {
   background: color-mix(in srgb, var(--color-gold) 12%, transparent);
@@ -581,7 +673,140 @@ onUnmounted(() => {
   opacity: 1;
 }
 
+.close-btn {
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.close-btn:active {
+  transform: scale(0.95);
+}
+@media (hover: hover) and (pointer: fine) {
+  .close-btn:hover {
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: scale(1.08);
+  }
+}
+
 @media (max-width: 640px) {
   .poster-frame { width: 76px; }
+}
+
+/* Mark Watched button */
+.watched-btn {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium cursor-pointer border;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  background: color-mix(in srgb, #6cb4ee 8%, transparent);
+  border-color: color-mix(in srgb, #6cb4ee 15%, transparent);
+  color: #6cb4ee;
+}
+@media (hover: hover) and (pointer: fine) {
+  .watched-btn:hover {
+    background: color-mix(in srgb, #6cb4ee 15%, transparent);
+    border-color: color-mix(in srgb, #6cb4ee 25%, transparent);
+  }
+}
+.watched-btn:active {
+  transform: scale(0.97);
+}
+.watched-btn:focus-visible {
+  outline: 2px solid #6cb4ee;
+  outline-offset: 2px;
+}
+.watched-btn.rated {
+  background: color-mix(in srgb, var(--w-color) 12%, transparent);
+  border-color: color-mix(in srgb, var(--w-color) 25%, transparent);
+  color: var(--w-color);
+}
+
+/* Rating popover */
+.rating-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-hover);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  z-index: 30;
+  white-space: nowrap;
+}
+.popover-label {
+  @apply block text-[10px] tracking-[3px] uppercase text-text-dim font-medium mb-2 text-center;
+}
+.popover-options {
+  display: flex;
+  gap: 6px;
+}
+.popover-rating-btn {
+  @apply flex items-center justify-center cursor-pointer border bg-transparent;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-muted);
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .popover-rating-btn:hover {
+    border-color: color-mix(in srgb, var(--r-color) 40%, transparent);
+    background: color-mix(in srgb, var(--r-color) 10%, transparent);
+    color: var(--r-color);
+  }
+}
+.popover-rating-btn:active {
+  transform: scale(0.92);
+}
+.popover-rating-btn.active {
+  border-color: color-mix(in srgb, var(--r-color) 50%, transparent);
+  background: color-mix(in srgb, var(--r-color) 15%, transparent);
+  color: var(--r-color);
+}
+.popover-arrow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: var(--color-surface-alt);
+  border-right: 1px solid var(--color-border-hover);
+  border-bottom: 1px solid var(--color-border-hover);
+}
+
+/* Popover transitions */
+.popover-enter-active {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.popover-leave-active {
+  transition: opacity 0.15s ease;
+}
+.popover-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.95);
+}
+.popover-leave-to {
+  opacity: 0;
+  transform: translateX(-50%);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .modal-card {
+    transition: none !important;
+  }
+  .backdrop-layer {
+    transition-duration: 0.01s !important;
+  }
+  .modal-countdown.critical {
+    animation: none;
+  }
+  .popover-enter-active,
+  .popover-leave-active {
+    transition-duration: 0.01s !important;
+  }
 }
 </style>
