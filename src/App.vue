@@ -95,6 +95,7 @@ watch(selectedProviders, (v) => {
 })
 const selectedGenre = ref<number | null>(null)
 const selectedMood = ref<string | null>(null)
+const browseBy = ref<'mood' | 'genre'>('mood')
 const hiddenGemsOnly = ref(false)
 const sortBy = ref("popularity.desc")
 const expiringFirst = ref(false)
@@ -343,6 +344,14 @@ function handleToggleWatchlist(movie: any) {
   haptic()
 }
 
+function switchBrowseMode(mode: 'mood' | 'genre') {
+  if (browseBy.value === mode) return
+  sounds.filterChange()
+  browseBy.value = mode
+  selectedMood.value = null
+  selectedGenre.value = null
+}
+
 function selectMood(moodId: string) {
   sounds.moodSelect()
   haptic()
@@ -531,25 +540,25 @@ function closeMovie() {
       <Transition name="slide-fade">
         <div v-if="hasProviders" class="grid grid-cols-[1fr_auto] gap-10 items-start mb-12 pb-10 border-b border-border-subtle max-sm:grid-cols-1 max-sm:gap-8">
           <div>
-            <!-- Mood row -->
-            <div class="mb-6">
-              <p class="control-label">Mood</p>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="mood in MOODS"
-                  :key="mood.id"
-                  class="pill-btn pill-sm"
-                  :class="{ active: selectedMood === mood.id }"
-                  :style="{ '--c': 'var(--color-gold)' }"
-                  @click="selectMood(mood.id)"
-                >
-                  <component :is="moodIcons[mood.icon]" :size="14" />
-                  {{ mood.label }}
-                </button>
-              </div>
+            <!-- Browse by tabs -->
+            <div class="flex items-center gap-0 mb-4">
+              <button class="browse-tab" :class="{ active: browseBy === 'mood' }" @click="switchBrowseMode('mood')">Mood</button>
+              <button class="browse-tab" :class="{ active: browseBy === 'genre' }" @click="switchBrowseMode('genre')">Genre</button>
             </div>
-            <p class="control-label">Genre</p>
-            <div class="flex flex-wrap gap-2">
+            <div v-if="browseBy === 'mood'" class="flex flex-wrap gap-2">
+              <button
+                v-for="mood in MOODS"
+                :key="mood.id"
+                class="pill-btn pill-sm"
+                :class="{ active: selectedMood === mood.id }"
+                :style="{ '--c': 'var(--color-gold)' }"
+                @click="selectMood(mood.id)"
+              >
+                <component :is="moodIcons[mood.icon]" :size="14" />
+                {{ mood.label }}
+              </button>
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
               <button
                 v-for="g in GENRES"
                 :key="g.id"
@@ -914,6 +923,24 @@ function closeMovie() {
   color: var(--color-text-muted);
   background: var(--color-surface-alt);
 }
+/* ═══ Browse mode tabs ═══ */
+.browse-tab {
+  @apply px-3 py-1.5 text-[10px] tracking-[3px] uppercase font-medium cursor-pointer
+         bg-transparent border-0 text-text-dim;
+  transition: color 0.3s ease;
+}
+.browse-tab:hover { color: var(--color-text-muted); }
+.browse-tab.active { color: var(--color-text-secondary); }
+.browse-tab:focus-visible {
+  outline: none;
+  color: var(--color-text-secondary);
+}
+.browse-tab + .browse-tab::before {
+  content: '/';
+  @apply text-text-dim text-[10px] mr-3;
+  opacity: 0.3;
+}
+
 .sound-toggle:focus-visible {
   outline: 2px solid var(--color-text-dim);
   outline-offset: 2px;
