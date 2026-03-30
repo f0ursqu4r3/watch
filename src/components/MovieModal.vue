@@ -296,7 +296,7 @@ onUnmounted(() => {
             </div>
           </Transition>
           <!-- Action buttons -->
-          <div class="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+          <div class="hero-actions">
             <button class="watchlist-btn" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
               <BookmarkCheck v-if="isInWatchlist" :size="14" />
               <Bookmark v-else :size="14" />
@@ -484,7 +484,12 @@ onUnmounted(() => {
     0 50px 100px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 255, 255, 0.02),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  scroll-behavior: smooth;
 }
+.modal-card::-webkit-scrollbar { width: 4px; }
+.modal-card::-webkit-scrollbar-track { background: transparent; }
+.modal-card::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+.modal-card::-webkit-scrollbar-thumb:hover { background: var(--color-border-hover); }
 
 .modal-countdown {
   @apply absolute top-4 left-4 z-20 px-3 py-1.5 rounded-lg flex items-center;
@@ -515,8 +520,27 @@ onUnmounted(() => {
   50% { background: rgba(255, 68, 68, 0.15); }
 }
 
-.badge-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-.badge-leave-active { transition: all 0.2s ease; }
+.hero-actions {
+  @apply absolute z-10 flex items-center gap-2;
+  bottom: 16px;
+  right: 16px;
+}
+@media (max-width: 640px) {
+  .hero-actions {
+    bottom: 10px;
+    right: 10px;
+    gap: 6px;
+  }
+  .hero-actions .watchlist-btn,
+  .hero-actions .watched-btn {
+    font-size: 10px;
+    padding: 6px 10px;
+    gap: 4px;
+  }
+}
+
+.badge-enter-active { transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.badge-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
 .badge-enter-from { opacity: 0; transform: scale(0.92) translateY(-4px); }
 .badge-leave-to { opacity: 0; transform: scale(0.9); }
 
@@ -638,8 +662,10 @@ onUnmounted(() => {
   text-underline-offset: 3px;
   transition: text-decoration-color 0.2s;
 }
-.person-link:hover {
-  text-decoration-color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .person-link:hover {
+    text-decoration-color: var(--accent);
+  }
 }
 
 .trailer-btn {
@@ -650,9 +676,11 @@ onUnmounted(() => {
   transition: background 0.3s ease, border-color 0.3s ease;
   width: fit-content;
 }
-.trailer-btn:hover {
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .trailer-btn:hover {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
 }
 .trailer-btn:active {
   transform: scale(0.97);
@@ -662,13 +690,17 @@ onUnmounted(() => {
 .watchlist-btn {
   @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium cursor-pointer border;
   transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-  background: color-mix(in srgb, var(--color-gold) 8%, transparent);
-  border-color: color-mix(in srgb, var(--color-gold) 15%, transparent);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border-color: color-mix(in srgb, var(--color-gold) 20%, transparent);
   color: var(--color-gold);
 }
-.watchlist-btn:hover {
-  background: color-mix(in srgb, var(--color-gold) 15%, transparent);
-  border-color: color-mix(in srgb, var(--color-gold) 25%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .watchlist-btn:hover {
+    background: color-mix(in srgb, var(--color-gold) 15%, rgba(0, 0, 0, 0.5));
+    border-color: color-mix(in srgb, var(--color-gold) 35%, transparent);
+  }
 }
 .watchlist-btn:active {
   transform: scale(0.97);
@@ -714,14 +746,16 @@ onUnmounted(() => {
 .watched-btn {
   @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium cursor-pointer border;
   transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-  background: color-mix(in srgb, #6cb4ee 8%, transparent);
-  border-color: color-mix(in srgb, #6cb4ee 15%, transparent);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border-color: color-mix(in srgb, #6cb4ee 20%, transparent);
   color: #6cb4ee;
 }
 @media (hover: hover) and (pointer: fine) {
   .watched-btn:hover {
-    background: color-mix(in srgb, #6cb4ee 15%, transparent);
-    border-color: color-mix(in srgb, #6cb4ee 25%, transparent);
+    background: color-mix(in srgb, #6cb4ee 15%, rgba(0, 0, 0, 0.5));
+    border-color: color-mix(in srgb, #6cb4ee 35%, transparent);
   }
 }
 .watched-btn:active {
@@ -743,6 +777,7 @@ onUnmounted(() => {
   bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
+  transform-origin: bottom center;
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border-hover);
   border-radius: 12px;
