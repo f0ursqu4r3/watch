@@ -261,7 +261,7 @@ onUnmounted(() => {
   <Teleport to="body">
     <div
       ref="backdropEl"
-      class="fixed inset-0 z-1000 flex items-center justify-center p-6 overflow-y-auto max-sm:p-0 max-sm:items-end"
+      class="fixed inset-0 z-1000 flex items-start justify-center p-6 overflow-y-auto max-sm:p-0 max-sm:items-end"
       :style="{ '--accent': accentColor }"
       @click="onBackdropClick"
       tabindex="-1"
@@ -271,7 +271,7 @@ onUnmounted(() => {
       <div class="backdrop-layer absolute inset-0 modal-ambient pointer-events-none" :class="{ visible: backdropVisible }" />
 
       <!-- Modal card -->
-      <div ref="modalCardEl" class="modal-card relative w-full max-w-[680px] overflow-hidden my-auto max-sm:max-w-full max-sm:rounded-b-none max-sm:my-0">
+      <div ref="modalCardEl" class="modal-card relative w-full max-w-[680px] max-h-[calc(100vh-48px)] overflow-y-auto my-auto max-sm:max-w-full max-sm:rounded-b-none max-sm:my-0 max-sm:max-h-[92vh]">
         <!-- Close -->
         <button
           class="close-btn absolute top-4 right-4 z-20 w-10 h-10 rounded-full border border-white/8 bg-black/40 backdrop-blur-xl text-text-muted cursor-pointer flex items-center justify-center"
@@ -345,31 +345,32 @@ onUnmounted(() => {
                   <svg v-if="prov.link" class="link-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
               </div>
-              <!-- Watchlist button -->
-              <button class="watchlist-btn mt-3" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
-                <BookmarkCheck v-if="isInWatchlist" :size="14" />
-                <Bookmark v-else :size="14" />
-                {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
-              </button>
-              <!-- Mark Watched button -->
-              <div class="relative">
-                <button
-                  v-if="!isWatched"
-                  class="watched-btn mt-3"
-                  @click.stop="showRatingPopover = !showRatingPopover"
-                >
-                  <CircleCheckBig :size="14" />
-                  Mark Watched
+              <!-- Action buttons -->
+              <div class="flex items-center gap-2.5 mt-3 flex-wrap">
+                <button class="watchlist-btn" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
+                  <BookmarkCheck v-if="isInWatchlist" :size="14" />
+                  <Bookmark v-else :size="14" />
+                  {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
                 </button>
-                <button
-                  v-else
-                  class="watched-btn mt-3 rated"
-                  :style="{ '--w-color': currentRatingConfig?.color }"
-                  @click.stop="showRatingPopover = !showRatingPopover"
-                >
-                  <component :is="currentRatingConfig?.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
-                  Watched
-                </button>
+                <!-- Mark Watched button -->
+                <div class="relative">
+                  <button
+                    v-if="!isWatched"
+                    class="watched-btn"
+                    @click.stop="showRatingPopover = !showRatingPopover"
+                  >
+                    <CircleCheckBig :size="14" />
+                    Mark Watched
+                  </button>
+                  <button
+                    v-else
+                    class="watched-btn rated"
+                    :style="{ '--w-color': currentRatingConfig?.color }"
+                    @click.stop="showRatingPopover = !showRatingPopover"
+                  >
+                    <component :is="currentRatingConfig?.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
+                    Watched
+                  </button>
 
                 <!-- Rating popover -->
                 <Transition name="popover">
@@ -395,6 +396,7 @@ onUnmounted(() => {
                     <div class="popover-arrow" />
                   </div>
                 </Transition>
+                </div>
               </div>
             </div>
           </div>
