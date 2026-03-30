@@ -148,6 +148,21 @@ function onKey(e: KeyboardEvent) {
     }
     if (!animating.value) closeWithAnimation()
   }
+  if (e.key === 'Tab' && showRatingPopover.value) {
+    const popover = document.querySelector('.rating-popover')
+    if (!popover) return
+    const focusable = popover.querySelectorAll<HTMLElement>('button')
+    if (focusable.length === 0) return
+    const first = focusable[0]!
+    const last = focusable[focusable.length - 1]!
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 }
 
 function closeWithAnimation() {
@@ -372,9 +387,9 @@ onUnmounted(() => {
                       >
                         <template v-if="opt.double">
                           <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
-                          <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" style="margin-left: -4px" />
+                          <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" style="margin-left: -3px" />
                         </template>
-                        <component v-else :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="16" />
+                        <component v-else :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
                       </button>
                     </div>
                     <div class="popover-arrow" />

@@ -449,6 +449,34 @@ watch(() => filtered.value.length, (target) => {
   countFrame = requestAnimationFrame(step)
 })
 
+function useAnimatedCount(source: () => number) {
+  const display = ref(source())
+  let frame: number | null = null
+  watch(source, (target) => {
+    if (frame) cancelAnimationFrame(frame)
+    const start = display.value
+    const diff = target - start
+    if (diff === 0) return
+    const duration = Math.min(400, Math.abs(diff) * 15)
+    const startTime = performance.now()
+    function step(now: number) {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      display.value = Math.round(start + diff * eased)
+      if (progress < 1) frame = requestAnimationFrame(step)
+    }
+    frame = requestAnimationFrame(step)
+  })
+  return display
+}
+
+const displayWatchedTotal = useAnimatedCount(() => watchedStats.value.total)
+const displayWatchedLoved = useAnimatedCount(() => watchedStats.value.loved)
+const displayWatchedGood = useAnimatedCount(() => watchedStats.value.good)
+const displayWatchedMeh = useAnimatedCount(() => watchedStats.value.meh)
+const displayWatchedAwful = useAnimatedCount(() => watchedStats.value.awful)
+
 const selectedMovie = ref<any>(null)
 const flipOrigin = ref<{ x: number; y: number; w: number; h: number } | null>(null)
 
@@ -790,27 +818,27 @@ function closeMovie() {
           <div class="watched-stats mb-8">
             <div class="flex flex-col gap-1.5">
               <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Watched</span>
-              <span class="font-display text-[22px] font-bold text-text-primary leading-none">{{ watchedStats.total }}</span>
+              <span class="font-display text-[22px] font-bold text-text-primary leading-none">{{ displayWatchedTotal }}</span>
             </div>
             <div class="w-px h-10 self-center bg-border" />
             <div class="flex gap-4">
               <div class="flex items-center gap-1.5">
                 <ThumbsUp :size="14" style="color: #1CE783" />
                 <ThumbsUp :size="14" style="color: #1CE783; margin-left: -6px" />
-                <span class="text-[14px] font-semibold" style="color: #1CE783">{{ watchedStats.loved }}</span>
+                <span class="text-[14px] font-semibold" style="color: #1CE783">{{ displayWatchedLoved }}</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <ThumbsUp :size="14" style="color: #6cb4ee" />
-                <span class="text-[14px] font-semibold" style="color: #6cb4ee">{{ watchedStats.good }}</span>
+                <span class="text-[14px] font-semibold" style="color: #6cb4ee">{{ displayWatchedGood }}</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <ThumbsDown :size="14" style="color: #f0a030" />
-                <span class="text-[14px] font-semibold" style="color: #f0a030">{{ watchedStats.meh }}</span>
+                <span class="text-[14px] font-semibold" style="color: #f0a030">{{ displayWatchedMeh }}</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <ThumbsDown :size="14" style="color: #ff5555" />
                 <ThumbsDown :size="14" style="color: #ff5555; margin-left: -6px" />
-                <span class="text-[14px] font-semibold" style="color: #ff5555">{{ watchedStats.awful }}</span>
+                <span class="text-[14px] font-semibold" style="color: #ff5555">{{ displayWatchedAwful }}</span>
               </div>
             </div>
           </div>
