@@ -821,7 +821,7 @@ function closeMovie() {
               <span class="font-display text-[22px] font-bold text-text-primary leading-none">{{ displayWatchedTotal }}</span>
             </div>
             <div class="w-px h-10 self-center bg-border" />
-            <div class="flex gap-4">
+            <div class="flex gap-4 flex-wrap">
               <div class="flex items-center gap-1.5">
                 <ThumbsUp :size="14" style="color: #1CE783" />
                 <ThumbsUp :size="14" style="color: #1CE783; margin-left: -6px" />
@@ -930,6 +930,14 @@ function closeMovie() {
   @apply text-xs px-4 py-2;
 }
 .pill-sm .pill-dot { @apply hidden; }
+@media (max-width: 640px) {
+  .pill-btn {
+    min-height: 44px;
+  }
+  .pill-sm {
+    min-height: 40px;
+  }
+}
 
 /* ═══ Person badge ═══ */
 .person-badge {
@@ -984,6 +992,11 @@ function closeMovie() {
   border-color: color-mix(in srgb, var(--c) 40%, transparent);
   color: var(--color-text-primary);
   box-shadow: 0 0 16px -4px color-mix(in srgb, var(--c) 15%, transparent);
+}
+@media (max-width: 768px) and (min-width: 641px) {
+  .select-input {
+    min-width: 0;
+  }
 }
 
 /* ═══ Empty state rings ═══ */
@@ -1069,8 +1082,14 @@ function closeMovie() {
 }
 
 .sound-toggle {
-  @apply p-2 rounded-lg cursor-pointer border-0 bg-transparent transition-all duration-300;
+  @apply p-2.5 rounded-lg cursor-pointer border-0 bg-transparent;
+  transition: color 0.3s ease, background 0.3s ease;
   color: var(--color-text-dim);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 @media (hover: hover) and (pointer: fine) {
   .sound-toggle:hover {
@@ -1105,10 +1124,19 @@ function closeMovie() {
 
 /* ═══ Watched stats bar ═══ */
 .watched-stats {
-  @apply flex gap-6 p-5 rounded-xl;
+  @apply flex gap-6 p-5 rounded-xl flex-wrap;
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+@media (max-width: 640px) {
+  .watched-stats {
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .watched-stats .w-px {
+    display: none;
+  }
 }
 
 /* Reduced motion */

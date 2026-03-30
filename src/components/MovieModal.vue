@@ -271,7 +271,7 @@ onUnmounted(() => {
       <div class="backdrop-layer absolute inset-0 modal-ambient pointer-events-none" :class="{ visible: backdropVisible }" />
 
       <!-- Modal card -->
-      <div ref="modalCardEl" class="modal-card relative w-full max-w-[680px] max-h-[calc(100vh-48px)] overflow-y-auto my-auto max-sm:max-w-full max-sm:rounded-b-none max-sm:my-0 max-sm:max-h-[92vh]">
+      <div ref="modalCardEl" class="modal-card relative w-full max-w-[680px] max-h-[calc(100dvh-48px)] overflow-y-auto my-auto max-sm:max-w-full max-sm:rounded-b-none max-sm:my-0 max-sm:max-h-[92dvh]">
         <!-- Close -->
         <button
           class="close-btn absolute top-4 right-4 z-20 w-10 h-10 rounded-full border border-white/8 bg-black/40 backdrop-blur-xl text-text-muted cursor-pointer flex items-center justify-center"
@@ -434,21 +434,21 @@ onUnmounted(() => {
           </a>
 
           <!-- Timing bar -->
-          <div v-if="movie.runtime" class="timing-bar mt-7">
+          <div v-if="movie.runtime" class="timing-bar mt-7 max-sm:flex-wrap max-sm:gap-4">
             <div class="flex flex-col gap-1.5">
               <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Runtime</span>
               <span class="text-[15px] font-mono font-medium tabular-nums text-text-primary">
                 {{ fmtRuntime(movie.runtime) }}
               </span>
             </div>
-            <div class="w-px h-10 self-center" :style="{ background: `${accentColor}20` }" />
+            <div class="w-px h-10 self-center max-sm:hidden" :style="{ background: `${accentColor}20` }" />
             <div class="flex flex-col gap-1.5">
               <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Start</span>
               <span class="text-[15px] font-mono font-medium tabular-nums text-text-secondary">
                 {{ startTimeDisplay }}
               </span>
             </div>
-            <div class="w-px h-10 self-center" :style="{ background: `${accentColor}20` }" />
+            <div class="w-px h-10 self-center max-sm:hidden" :style="{ background: `${accentColor}20` }" />
             <div class="flex flex-col gap-1.5">
               <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Done by</span>
               <span class="text-[15px] font-mono font-medium tabular-nums" :style="{ color: accentColor }">
@@ -571,6 +571,13 @@ onUnmounted(() => {
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+@media (max-width: 640px) {
+  .timing-bar {
+    gap: 12px;
+    padding: 14px 16px;
+  }
 }
 
 .credits-section {
@@ -729,6 +736,12 @@ onUnmounted(() => {
 .close-btn:active {
   transform: scale(0.95);
 }
+@media (max-width: 640px) {
+  .close-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
 @media (hover: hover) and (pointer: fine) {
   .close-btn:hover {
     background: rgba(0, 0, 0, 0.6);
@@ -795,8 +808,8 @@ onUnmounted(() => {
 }
 .popover-rating-btn {
   @apply flex items-center justify-center cursor-pointer border bg-transparent;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   border-color: rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.04);
@@ -828,6 +841,27 @@ onUnmounted(() => {
   background: var(--color-surface-alt);
   border-right: 1px solid var(--color-border-hover);
   border-bottom: 1px solid var(--color-border-hover);
+}
+
+@media (max-width: 640px) {
+  .rating-popover {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+  .popover-arrow {
+    left: auto;
+    right: 20px;
+    transform: rotate(45deg);
+  }
+  .popover-enter-from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  .popover-leave-to {
+    opacity: 0;
+    transform: none;
+  }
 }
 
 /* Popover transitions */

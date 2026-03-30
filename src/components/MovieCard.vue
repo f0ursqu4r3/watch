@@ -470,6 +470,12 @@ const ratingConfig = computed(() => {
   opacity: 0;
   transform: scale(0.8);
 }
+@media (max-width: 640px) {
+  .bookmark-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
 .bookmark-btn.visible { opacity: 1; transform: scale(1); }
 .bookmark-btn.saved { color: var(--color-gold); opacity: 1; transform: scale(1); }
 @media (hover: hover) and (pointer: fine) {
@@ -533,6 +539,14 @@ const ratingConfig = computed(() => {
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid color-mix(in srgb, var(--rating-color) 25%, transparent);
   color: var(--rating-color);
+}
+
+@media (max-width: 640px) {
+  .rating-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
 }
 
 /* Reduced motion */
