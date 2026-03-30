@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Gem, Bookmark, BookmarkCheck } from 'lucide-vue-next'
+import { Gem, Bookmark, BookmarkCheck, ThumbsUp, ThumbsDown } from 'lucide-vue-next'
 
 const props = defineProps<{
   movie: any
@@ -12,12 +12,16 @@ const props = defineProps<{
   multiService: boolean
   isHiddenGem: boolean
   isInWatchlist: boolean
+  entranceIndex?: number
+  isWatched: boolean
+  watchedRating: 'loved' | 'good' | 'meh' | 'awful' | null
 }>()
 
 const emit = defineEmits<{ select: [movie: any, rect?: DOMRect]; 'toggle-watchlist': [movie: any] }>()
 const hovered = ref(false)
 const cardEl = ref<HTMLElement | null>(null)
 const justBookmarked = ref(false)
+const posterLoaded = ref(false)
 
 function fmtRuntime(min: number) {
   const h = Math.floor(min / 60)
@@ -69,6 +73,10 @@ function onBookmark() {
   }
 }
 
+const entranceDelay = computed(() =>
+  props.entranceIndex != null ? `${Math.min(props.entranceIndex * 0.04, 0.6)}s` : '0s'
+)
+
 const glowGradient = computed(() => {
   const colors = props.providers.map(p => p.color)
   if (colors.length <= 1) return null
@@ -76,10 +84,20 @@ const glowGradient = computed(() => {
   const stops = [...colors, colors[0]!]
   return `conic-gradient(from 0deg, ${stops.join(', ')})`
 })
+
+const ratingConfig = computed(() => {
+  const configs: Record<string, { color: string; double: boolean; direction: 'up' | 'down' }> = {
+    loved: { color: '#1CE783', double: true, direction: 'up' },
+    good: { color: '#6cb4ee', double: false, direction: 'up' },
+    meh: { color: '#f0a030', double: false, direction: 'down' },
+    awful: { color: '#ff5555', double: true, direction: 'down' },
+  }
+  return props.watchedRating ? configs[props.watchedRating] ?? null : null
+})
 </script>
 
 <template>
-  <div class="card-wrap" :style="glowGradient ? { '--provider-gradient': glowGradient } : {}">
+  <div class="card-wrap" :style="{ ...(glowGradient ? { '--provider-gradient': glowGradient } : {}), '--entrance-delay': entranceDelay }">
     <div v-if="glowGradient" class="glow-ring"><div class="glow-ring-inner" /></div>
     <div
       class="card"
@@ -103,13 +121,17 @@ const glowGradient = computed(() => {
     </button>
 
     <!-- Poster -->
-    <img
-      v-if="poster"
-      :src="poster"
-      :alt="movie.title"
-      class="poster-img"
-      loading="lazy"
-    />
+    <div v-if="poster" class="poster-wrap">
+      <div v-if="!posterLoaded" class="poster-shimmer" />
+      <img
+        :src="poster"
+        :alt="movie.title"
+        class="poster-img"
+        :class="{ loaded: posterLoaded }"
+        loading="lazy"
+        @load="posterLoaded = true"
+      />
+    </div>
     <div v-else class="no-poster">
       <span class="font-display italic text-text-dim text-sm leading-snug">{{ movie.title }}</span>
     </div>
@@ -125,9 +147,18 @@ const glowGradient = computed(() => {
     </Transition>
 
     <!-- Gem badge -->
-    <div v-if="isHiddenGem" class="gem-badge">
+    <div v-if="isHiddenGem && !isWatched" class="gem-badge">
       <Gem :size="10" />
       <span>GEM</span>
+    </div>
+
+    <!-- Watched rating badge -->
+    <div v-if="ratingConfig" class="rating-badge" :style="{ '--rating-color': ratingConfig.color }">
+      <template v-if="ratingConfig.double">
+        <component :is="ratingConfig.direction === 'up' ? ThumbsUp : ThumbsDown" :size="10" />
+        <component :is="ratingConfig.direction === 'up' ? ThumbsUp : ThumbsDown" :size="10" style="margin-left: -3px" />
+      </template>
+      <component v-else :is="ratingConfig.direction === 'up' ? ThumbsUp : ThumbsDown" :size="12" />
     </div>
 
     <!-- Overlay -->
@@ -185,17 +216,32 @@ const glowGradient = computed(() => {
 .card-wrap {
   position: relative;
   transform: translateY(0) scale(1);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: card-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--entrance-delay, 0s);
 }
-.card-wrap:hover {
-  transform: translateY(-8px) scale(1.02);
-  z-index: 10;
+
+@keyframes card-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .card-wrap:hover {
+    transform: translateY(-8px) scale(1.02);
+    z-index: 10;
+  }
 }
 
 .card {
   @apply relative rounded-xl overflow-hidden cursor-pointer bg-surface-raised;
   aspect-ratio: 2/3;
-  transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.02);
@@ -208,11 +254,13 @@ const glowGradient = computed(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-.card-wrap:hover .card {
-  box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.5),
-    0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent),
-    0 0 40px -8px color-mix(in srgb, var(--accent) 10%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .card-wrap:hover .card {
+    box-shadow:
+      0 24px 48px rgba(0, 0, 0, 0.5),
+      0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent),
+      0 0 40px -8px color-mix(in srgb, var(--accent) 10%, transparent);
+  }
 }
 
 /* Multi-provider animated glow */
@@ -221,7 +269,7 @@ const glowGradient = computed(() => {
   inset: -3px;
   border-radius: 14px;
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.3s ease;
   pointer-events: none;
   z-index: -1;
   overflow: hidden;
@@ -238,13 +286,15 @@ const glowGradient = computed(() => {
   filter: blur(14px);
   animation: glow-spin 5s linear infinite;
 }
-.card-wrap:hover .glow-ring {
-  opacity: 0.7;
-}
-.card-wrap:hover .card.multi-glow {
-  box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+@media (hover: hover) and (pointer: fine) {
+  .card-wrap:hover .glow-ring {
+    opacity: 0.7;
+  }
+  .card-wrap:hover .card.multi-glow {
+    box-shadow:
+      0 24px 48px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
 }
 
 @keyframes glow-spin {
@@ -252,12 +302,41 @@ const glowGradient = computed(() => {
   to { rotate: 360deg; }
 }
 
+.poster-wrap {
+  @apply w-full h-full relative;
+}
+
+.poster-shimmer {
+  @apply absolute inset-0;
+  background: linear-gradient(
+    110deg,
+    var(--color-surface-raised) 0%,
+    var(--color-surface-raised) 40%,
+    color-mix(in srgb, var(--color-surface-alt) 80%, rgba(255, 255, 255, 0.03)) 50%,
+    var(--color-surface-raised) 60%,
+    var(--color-surface-raised) 100%
+  );
+  background-size: 200% 100%;
+  animation: poster-shimmer 1.8s linear infinite;
+}
+
+@keyframes poster-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .poster-img {
   @apply w-full h-full object-cover block;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  opacity: 0;
 }
-.card-wrap:hover .poster-img {
-  transform: scale(1.06);
+.poster-img.loaded {
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card-wrap:hover .poster-img {
+    transform: scale(1.06);
+  }
 }
 
 .no-poster {
@@ -322,7 +401,7 @@ const glowGradient = computed(() => {
     rgba(6, 10, 14, 0.05) 70%,
     transparent 100%
   );
-  transition: background 0.4s ease;
+  transition: background 0.25s ease;
 }
 .overlay.hovered {
   background: linear-gradient(
@@ -342,11 +421,13 @@ const glowGradient = computed(() => {
   opacity: 0;
   transition: opacity 0.3s;
 }
-.card-wrap:hover .shine { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .card-wrap:hover .shine { opacity: 1; }
+}
 
 .info {
   transform: translateY(0);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .info.lifted {
   transform: translateY(-4px);
@@ -358,9 +439,9 @@ const glowGradient = computed(() => {
   grid-template-rows: 0fr;
   opacity: 0;
   transform: translateY(6px);
-  transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.3s ease,
-              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: grid-template-rows 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.2s ease,
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 .hover-reveal > * {
@@ -375,12 +456,13 @@ const glowGradient = computed(() => {
 /* Transitions */
 .badge-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .badge-leave-active { transition: all 0.2s ease; }
-.badge-enter-from { opacity: 0; transform: scale(0.85) translateY(-4px); }
+.badge-enter-from { opacity: 0; transform: scale(0.92) translateY(-4px); }
 .badge-leave-to { opacity: 0; transform: scale(0.9); }
 
 /* Bookmark button */
 .bookmark-btn {
-  @apply absolute top-2.5 left-2.5 z-4 w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer border-0 transition-all duration-300;
+  @apply absolute top-2.5 left-2.5 z-4 w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer border-0;
+  transition: opacity 0.3s cubic-bezier(0.23, 1, 0.32, 1), transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), background 0.2s ease;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -390,7 +472,9 @@ const glowGradient = computed(() => {
 }
 .bookmark-btn.visible { opacity: 1; transform: scale(1); }
 .bookmark-btn.saved { color: var(--color-gold); opacity: 1; transform: scale(1); }
-.bookmark-btn:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.1); }
+@media (hover: hover) and (pointer: fine) {
+  .bookmark-btn:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.08); }
+}
 .bookmark-btn.pop {
   animation: bookmark-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -430,11 +514,57 @@ const glowGradient = computed(() => {
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent 0%, rgba(28, 231, 131, 0.15) 50%, transparent 100%);
-  animation: gem-shimmer 3s ease-in-out infinite;
+  animation: gem-shimmer 3s linear infinite;
 }
 @keyframes gem-shimmer {
   0%, 100% { left: -100%; }
   50% { left: 100%; }
 }
 
+/* Watched rating badge */
+.rating-badge {
+  @apply absolute z-3 flex items-center justify-center rounded-[7px];
+  bottom: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--rating-color) 25%, transparent);
+  color: var(--rating-color);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .card-wrap {
+    animation: none;
+  }
+  .card-wrap,
+  .card,
+  .poster-img,
+  .overlay,
+  .info,
+  .hover-reveal,
+  .glow-ring,
+  .shine,
+  .bookmark-btn {
+    transition-duration: 0.01s !important;
+  }
+  .glow-ring-inner {
+    animation: none;
+  }
+  .poster-shimmer {
+    animation: none;
+  }
+  .expiring-glow.critical {
+    animation: none;
+  }
+  .countdown-badge.critical {
+    animation: none;
+  }
+  .gem-badge::after {
+    animation: none;
+  }
+}
 </style>
