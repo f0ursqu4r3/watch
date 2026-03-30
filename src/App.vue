@@ -5,9 +5,10 @@ import MovieModal from './components/MovieModal.vue'
 import { MOODS } from './data/moods'
 import {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain, Gem,
-  Bookmark, Volume2, VolumeX,
+  Bookmark, Volume2, VolumeX, CircleCheckBig, ThumbsUp, ThumbsDown,
 } from 'lucide-vue-next'
 import { useWatchlist } from './composables/useWatchlist'
+import { useWatched } from './composables/useWatched'
 import { useSound } from './composables/useSound'
 
 const moodIcons: Record<string, any> = {
@@ -110,8 +111,9 @@ const loadingMore = ref(false)
 const personFilter = ref<{ id: number; name: string } | null>(null)
 
 const { watchlist, isInWatchlist, toggleWatchlist } = useWatchlist()
+const { watched, isWatched, getWatchedRating, markWatched, watchedStats } = useWatched()
 const { soundEnabled, sounds, haptic } = useSound()
-const activeTab = ref<'discover' | 'my-list'>('discover')
+const activeTab = ref<'discover' | 'my-list' | 'watched'>('discover')
 
 const timeOptions = (() => {
   const opts: string[] = []
@@ -126,6 +128,15 @@ const timeOptions = (() => {
 })()
 
 const now = ref(Date.now())
+
+const timeOfDayLabel = computed(() => {
+  const hour = new Date(now.value).getHours()
+  if (hour >= 5 && hour < 12) return 'this morning'
+  if (hour >= 12 && hour < 17) return 'this afternoon'
+  if (hour >= 17 && hour < 21) return 'tonight'
+  return 'tonight' // late night still feels like "tonight"
+})
+
 let tickTimer: ReturnType<typeof setInterval> | null = null
 
 watch([startTimeStr, endTimeStr], ([s, e]) => {
@@ -344,6 +355,12 @@ function handleToggleWatchlist(movie: any) {
   haptic()
 }
 
+function handleMarkWatched(movie: any, rating: 'loved' | 'good' | 'meh' | 'awful') {
+  markWatched(movie, rating)
+  sounds.markWatched()
+  haptic()
+}
+
 function switchBrowseMode(mode: 'mood' | 'genre') {
   if (browseBy.value === mode) return
   sounds.filterChange()
@@ -469,7 +486,7 @@ function closeMovie() {
       <header class="pt-20 pb-14 max-sm:pt-14 max-sm:pb-10">
         <div class="flex items-center gap-3 mb-6">
           <div class="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
-          <span class="text-[10px] tracking-[5px] uppercase text-text-muted font-medium">What fits tonight</span>
+          <span class="text-[10px] tracking-[5px] uppercase text-text-muted font-medium">What fits {{ timeOfDayLabel }}</span>
           <div class="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
         </div>
         <h1 class="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold m-0 leading-[1.05] text-text-primary text-center">
@@ -494,6 +511,10 @@ function closeMovie() {
         <button class="tab-btn" :class="{ active: activeTab === 'my-list' }" :style="{ '--c': 'var(--color-gold)' }" @click="activeTab = 'my-list'">
           MY LIST
           <span v-if="watchlist.length" class="tab-count">{{ watchlist.length }}</span>
+        </button>
+        <button class="tab-btn" :class="{ active: activeTab === 'watched' }" :style="{ '--c': '#6cb4ee' }" @click="activeTab = 'watched'">
+          WATCHED
+          <span v-if="watched.length" class="tab-count" style="background: color-mix(in srgb, #6cb4ee 15%, transparent); color: #6cb4ee;">{{ watched.length }}</span>
         </button>
         <div class="flex-1" />
         <button class="sound-toggle" @click="soundEnabled = !soundEnabled" :title="soundEnabled ? 'Mute sounds' : 'Enable sounds'">
@@ -702,7 +723,7 @@ function closeMovie() {
 
         <TransitionGroup name="grid" tag="div" class="grid grid-cols-[repeat(auto-fill,minmax(175px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(135px,1fr))] max-sm:gap-3">
           <MovieCard
-            v-for="movie in filtered"
+            v-for="(movie, idx) in filtered"
             :key="movie.id"
             :movie="movie"
             :accent-color="providerColor"
@@ -713,6 +734,9 @@ function closeMovie() {
             :multi-service="selectedProviders.size > 1"
             :is-hidden-gem="isHiddenGem(movie)"
             :is-in-watchlist="isInWatchlist(movie.id)"
+            :is-watched="isWatched(movie.id)"
+            :watched-rating="getWatchedRating(movie.id)"
+            :entrance-index="idx"
             @select="openMovie"
             @toggle-watchlist="handleToggleWatchlist"
           />
@@ -742,12 +766,80 @@ function closeMovie() {
           </p>
         </div>
         <TransitionGroup v-else name="grid" tag="div" class="grid grid-cols-[repeat(auto-fill,minmax(175px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(135px,1fr))] max-sm:gap-3">
-          <MovieCard v-for="movie in watchlistFiltered" :key="movie.id" :movie="movie" :accent-color="providerColor" :deadline-ms="deadlineMs" :now="now" :start-at="effectiveStartMs" :providers="movieProviders(movie)" :multi-service="selectedProviders.size > 1" :is-hidden-gem="isHiddenGem(movie)" :is-in-watchlist="isInWatchlist(movie.id)" @select="openMovie" @toggle-watchlist="handleToggleWatchlist" />
+          <MovieCard v-for="(movie, idx) in watchlistFiltered" :key="movie.id" :movie="movie" :accent-color="providerColor" :deadline-ms="deadlineMs" :now="now" :start-at="effectiveStartMs" :providers="movieProviders(movie)" :multi-service="selectedProviders.size > 1" :is-hidden-gem="isHiddenGem(movie)" :is-in-watchlist="isInWatchlist(movie.id)" :is-watched="isWatched(movie.id)" :watched-rating="getWatchedRating(movie.id)" :entrance-index="idx" @select="openMovie" @toggle-watchlist="handleToggleWatchlist" />
         </TransitionGroup>
+      </template>
+
+      <!-- ═══ Watched ═══ -->
+      <template v-if="activeTab === 'watched'">
+        <div v-if="watched.length === 0" class="text-center pt-24 pb-20">
+          <div class="relative w-16 h-16 mx-auto mb-6">
+            <div class="absolute inset-0 rounded-full border border-border opacity-20" />
+            <div class="absolute inset-2 rounded-full border border-border opacity-30" />
+            <div class="absolute inset-0 flex items-center justify-center">
+              <CircleCheckBig :size="24" class="text-text-dim" />
+            </div>
+          </div>
+          <p class="text-text-dim text-sm font-display italic mb-2">Nothing watched yet</p>
+          <p class="text-text-dim text-xs tracking-wide max-w-xs mx-auto leading-relaxed opacity-60">
+            Rate a movie to start tracking what you've seen
+          </p>
+        </div>
+        <template v-else>
+          <!-- Stats bar -->
+          <div class="watched-stats mb-8">
+            <div class="flex flex-col gap-1.5">
+              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Watched</span>
+              <span class="font-display text-[22px] font-bold text-text-primary leading-none">{{ watchedStats.total }}</span>
+            </div>
+            <div class="w-px h-10 self-center bg-border" />
+            <div class="flex gap-4">
+              <div class="flex items-center gap-1.5">
+                <ThumbsUp :size="14" style="color: #1CE783" />
+                <ThumbsUp :size="14" style="color: #1CE783; margin-left: -6px" />
+                <span class="text-[14px] font-semibold" style="color: #1CE783">{{ watchedStats.loved }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <ThumbsUp :size="14" style="color: #6cb4ee" />
+                <span class="text-[14px] font-semibold" style="color: #6cb4ee">{{ watchedStats.good }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <ThumbsDown :size="14" style="color: #f0a030" />
+                <span class="text-[14px] font-semibold" style="color: #f0a030">{{ watchedStats.meh }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <ThumbsDown :size="14" style="color: #ff5555" />
+                <ThumbsDown :size="14" style="color: #ff5555; margin-left: -6px" />
+                <span class="text-[14px] font-semibold" style="color: #ff5555">{{ watchedStats.awful }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- Grid -->
+          <TransitionGroup name="grid" tag="div" class="grid grid-cols-[repeat(auto-fill,minmax(175px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(135px,1fr))] max-sm:gap-3">
+            <MovieCard
+              v-for="(movie, idx) in watched"
+              :key="movie.id"
+              :movie="{ id: movie.id, title: movie.title, poster_path: movie.posterPath, runtime: movie.runtime, vote_average: movie.voteAverage }"
+              :accent-color="providerColor"
+              :deadline-ms="null"
+              :now="now"
+              :start-at="effectiveStartMs"
+              :providers="[]"
+              :multi-service="false"
+              :is-hidden-gem="false"
+              :is-in-watchlist="false"
+              :is-watched="true"
+              :watched-rating="movie.rating"
+              :entrance-index="idx"
+              @select="openMovie"
+              @toggle-watchlist="handleToggleWatchlist"
+            />
+          </TransitionGroup>
+        </template>
       </template>
     </div>
 
-    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :deadline-ms="deadlineMs" :providers="movieProviders(selectedMovie)" :is-in-watchlist="isInWatchlist(selectedMovie.id)" @close="closeMovie" @search-person="searchPerson" @toggle-watchlist="handleToggleWatchlist" />
+    <MovieModal v-if="selectedMovie" :movie="selectedMovie" :accent-color="providerColor" :flip-origin="flipOrigin" :start-at="startMs" :deadline-ms="deadlineMs" :providers="movieProviders(selectedMovie)" :is-in-watchlist="isInWatchlist(selectedMovie.id)" :is-watched="isWatched(selectedMovie.id)" :watched-rating="getWatchedRating(selectedMovie.id)" @close="closeMovie" @search-person="searchPerson" @toggle-watchlist="handleToggleWatchlist" @mark-watched="handleMarkWatched" />
   </div>
 </template>
 
@@ -780,10 +872,15 @@ function closeMovie() {
   @apply px-5 py-2.5 rounded-full border border-border bg-surface-raised
          text-text-muted font-body text-[13px] font-medium cursor-pointer
          whitespace-nowrap flex items-center gap-2.5;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.23, 1, 0.32, 1);
 }
-.pill-btn:hover {
-  @apply border-border-hover text-text-secondary bg-surface-alt;
+@media (hover: hover) and (pointer: fine) {
+  .pill-btn:hover {
+    @apply border-border-hover text-text-secondary bg-surface-alt;
+  }
+}
+.pill-btn:active {
+  transform: scale(0.97);
 }
 .pill-btn.active {
   border-color: color-mix(in srgb, var(--c) 50%, transparent);
@@ -819,7 +916,9 @@ function closeMovie() {
   opacity: 0.5;
   transition: opacity 0.2s;
 }
-.person-badge-close:hover { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .person-badge-close:hover { opacity: 1; }
+}
 
 /* ═══ Expiring toggle ═══ */
 .expiring-toggle {
@@ -843,13 +942,15 @@ function closeMovie() {
 .select-input {
   @apply w-full py-2.5 pl-4 pr-10 rounded-xl border border-border bg-surface-raised
          text-text-muted font-body text-[13px] cursor-pointer outline-none appearance-none;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233d3832' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
 }
-.select-input:hover {
-  @apply border-border-hover;
+@media (hover: hover) and (pointer: fine) {
+  .select-input:hover {
+    @apply border-border-hover;
+  }
 }
 .select-input.active {
   border-color: color-mix(in srgb, var(--c) 40%, transparent);
@@ -919,9 +1020,14 @@ function closeMovie() {
 .tab-btn {
   @apply px-5 py-3 text-[11px] tracking-[3px] uppercase font-medium cursor-pointer
          bg-transparent border-0 border-b-2 border-transparent text-text-dim;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, border-color 0.3s ease, transform 0.15s cubic-bezier(0.23, 1, 0.32, 1);
 }
-.tab-btn:hover { color: var(--color-text-muted); }
+@media (hover: hover) and (pointer: fine) {
+  .tab-btn:hover { color: var(--color-text-muted); }
+}
+.tab-btn:active {
+  transform: scale(0.97);
+}
 .tab-btn:focus-visible {
   outline: none;
   color: var(--c);
@@ -938,9 +1044,11 @@ function closeMovie() {
   @apply p-2 rounded-lg cursor-pointer border-0 bg-transparent transition-all duration-300;
   color: var(--color-text-dim);
 }
-.sound-toggle:hover {
-  color: var(--color-text-muted);
-  background: var(--color-surface-alt);
+@media (hover: hover) and (pointer: fine) {
+  .sound-toggle:hover {
+    color: var(--color-text-muted);
+    background: var(--color-surface-alt);
+  }
 }
 /* ═══ Browse mode tabs ═══ */
 .browse-tab {
@@ -948,7 +1056,9 @@ function closeMovie() {
          bg-transparent border-0 text-text-dim;
   transition: color 0.3s ease;
 }
-.browse-tab:hover { color: var(--color-text-muted); }
+@media (hover: hover) and (pointer: fine) {
+  .browse-tab:hover { color: var(--color-text-muted); }
+}
 .browse-tab.active { color: var(--color-text-secondary); }
 .browse-tab:focus-visible {
   outline: none;
@@ -963,5 +1073,44 @@ function closeMovie() {
 .sound-toggle:focus-visible {
   outline: 2px solid var(--color-text-dim);
   outline-offset: 2px;
+}
+
+/* ═══ Watched stats bar ═══ */
+.watched-stats {
+  @apply flex gap-6 p-5 rounded-xl;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-layer {
+    transition-duration: 0.01s !important;
+  }
+  .pill-btn,
+  .tab-btn,
+  .select-input,
+  .sound-toggle,
+  .browse-tab,
+  .toggle-thumb,
+  .toggle-track {
+    transition-duration: 0.01s !important;
+  }
+  .orbit {
+    animation: none;
+  }
+  .bar {
+    animation: none;
+  }
+  .slide-fade-enter-active,
+  .slide-fade-leave-active,
+  .hint-enter-active,
+  .hint-leave-active,
+  .grid-enter-active,
+  .grid-leave-active,
+  .grid-move {
+    transition-duration: 0.01s !important;
+  }
 }
 </style>
