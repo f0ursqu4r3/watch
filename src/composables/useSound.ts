@@ -91,6 +91,11 @@ const sounds = {
     playTone(1200, 0.15, 'sine', 0.1)
     setTimeout(() => playTone(1600, 0.12, 'sine', 0.08), 80)
   },
+  markWatched() {
+    playTone(500, 0.1, 'sine', 0.12)
+    setTimeout(() => playTone(700, 0.1, 'sine', 0.1), 60)
+    setTimeout(() => playTone(1000, 0.15, 'sine', 0.08), 120)
+  },
   filterChange() {
     playTone(1000, 0.05, 'square', 0.06)
   },
