@@ -295,6 +295,58 @@ onUnmounted(() => {
               <span class="countdown-value">{{ fmtCountdown(countdownSecs!) }}</span>
             </div>
           </Transition>
+          <!-- Action buttons -->
+          <div class="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+            <button class="watchlist-btn" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
+              <BookmarkCheck v-if="isInWatchlist" :size="14" />
+              <Bookmark v-else :size="14" />
+              {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
+            </button>
+            <div class="relative">
+              <button
+                v-if="!isWatched"
+                class="watched-btn"
+                @click.stop="showRatingPopover = !showRatingPopover"
+              >
+                <CircleCheckBig :size="14" />
+                Mark Watched
+              </button>
+              <button
+                v-else
+                class="watched-btn rated"
+                :style="{ '--w-color': currentRatingConfig?.color }"
+                @click.stop="showRatingPopover = !showRatingPopover"
+              >
+                <component :is="currentRatingConfig?.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
+                Watched
+              </button>
+
+              <!-- Rating popover -->
+              <Transition name="popover">
+                <div v-if="showRatingPopover" class="rating-popover" role="dialog" aria-label="Rate this movie" @click.stop>
+                  <span class="popover-label">How was it?</span>
+                  <div class="popover-options">
+                    <button
+                      v-for="opt in RATING_OPTIONS"
+                      :key="opt.key"
+                      class="popover-rating-btn"
+                      :class="{ active: watchedRating === opt.key }"
+                      :style="{ '--r-color': opt.color }"
+                      :aria-label="opt.label"
+                      @click="selectRating(opt.key)"
+                    >
+                      <template v-if="opt.double">
+                        <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
+                        <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" style="margin-left: -3px" />
+                      </template>
+                      <component v-else :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
+                    </button>
+                  </div>
+                  <div class="popover-arrow" />
+                </div>
+              </Transition>
+            </div>
+          </div>
           <!-- Accent colored line at bottom of hero -->
           <div class="absolute bottom-0 left-0 right-0 h-px" :style="{ background: `linear-gradient(90deg, transparent 0%, ${accentColor}30 50%, transparent 100%)` }" />
         </div>
@@ -344,59 +396,6 @@ onUnmounted(() => {
                   {{ prov.name }}
                   <svg v-if="prov.link" class="link-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
-              </div>
-              <!-- Action buttons -->
-              <div class="flex items-center gap-2.5 mt-3 flex-wrap">
-                <button class="watchlist-btn" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
-                  <BookmarkCheck v-if="isInWatchlist" :size="14" />
-                  <Bookmark v-else :size="14" />
-                  {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
-                </button>
-                <!-- Mark Watched button -->
-                <div class="relative">
-                  <button
-                    v-if="!isWatched"
-                    class="watched-btn"
-                    @click.stop="showRatingPopover = !showRatingPopover"
-                  >
-                    <CircleCheckBig :size="14" />
-                    Mark Watched
-                  </button>
-                  <button
-                    v-else
-                    class="watched-btn rated"
-                    :style="{ '--w-color': currentRatingConfig?.color }"
-                    @click.stop="showRatingPopover = !showRatingPopover"
-                  >
-                    <component :is="currentRatingConfig?.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
-                    Watched
-                  </button>
-
-                <!-- Rating popover -->
-                <Transition name="popover">
-                  <div v-if="showRatingPopover" class="rating-popover" role="dialog" aria-label="Rate this movie" @click.stop>
-                    <span class="popover-label">How was it?</span>
-                    <div class="popover-options">
-                      <button
-                        v-for="opt in RATING_OPTIONS"
-                        :key="opt.key"
-                        class="popover-rating-btn"
-                        :class="{ active: watchedRating === opt.key }"
-                        :style="{ '--r-color': opt.color }"
-                        :aria-label="opt.label"
-                        @click="selectRating(opt.key)"
-                      >
-                        <template v-if="opt.double">
-                          <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
-                          <component :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" style="margin-left: -3px" />
-                        </template>
-                        <component v-else :is="opt.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
-                      </button>
-                    </div>
-                    <div class="popover-arrow" />
-                  </div>
-                </Transition>
-                </div>
               </div>
             </div>
           </div>
