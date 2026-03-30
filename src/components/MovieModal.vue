@@ -271,7 +271,7 @@ onUnmounted(() => {
       <div class="backdrop-layer absolute inset-0 modal-ambient pointer-events-none" :class="{ visible: backdropVisible }" />
 
       <!-- Modal card -->
-      <div ref="modalCardEl" class="modal-card relative w-full max-w-[680px] overflow-hidden max-sm:max-w-full max-sm:rounded-b-none max-sm:max-h-[92vh] max-sm:overflow-y-auto">
+      <div ref="modalCardEl" class="modal-card relative w-full max-w-[680px] overflow-hidden my-auto max-sm:max-w-full max-sm:rounded-b-none max-sm:my-0">
         <!-- Close -->
         <button
           class="close-btn absolute top-4 right-4 z-20 w-10 h-10 rounded-full border border-white/8 bg-black/40 backdrop-blur-xl text-text-muted cursor-pointer flex items-center justify-center"
@@ -302,7 +302,7 @@ onUnmounted(() => {
         <!-- Body -->
         <div class="px-8 pb-8 max-sm:px-5 max-sm:pb-6">
           <!-- Poster + heading -->
-          <div class="flex gap-6 -mt-14 relative z-2">
+          <div class="flex items-start gap-6 -mt-14 relative z-2">
             <div v-if="poster" class="poster-frame shrink-0">
               <img :src="poster" :alt="movie.title" class="w-full h-full object-cover rounded-lg" />
             </div>
@@ -531,9 +531,11 @@ onUnmounted(() => {
 
 .poster-frame {
   width: 100px;
+  min-height: 0;
   aspect-ratio: 2/3;
   border-radius: 10px;
   overflow: hidden;
+  flex-shrink: 0;
   box-shadow:
     0 12px 32px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 255, 255, 0.04);
