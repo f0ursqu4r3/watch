@@ -284,18 +284,22 @@ onUnmounted(() => {
         </button>
 
         <!-- Hero backdrop -->
-        <div class="relative w-full aspect-[16/8] overflow-hidden">
-          <img v-if="backdrop" :src="backdrop" :alt="movie.title" class="w-full h-full object-cover block scale-105" />
-          <div v-else class="w-full h-full bg-linear-to-br from-surface-alt to-surface" />
-          <div class="hero-fade" />
-          <!-- Countdown badge -->
-          <Transition name="badge">
-            <div v-if="showCountdown" class="modal-countdown" :class="urgency">
-              <span class="text-[10px] text-text-muted mr-1.5">Start within</span>
-              <span class="countdown-value">{{ fmtCountdown(countdownSecs!) }}</span>
-            </div>
-          </Transition>
-          <!-- Action buttons -->
+        <div class="relative">
+          <div class="w-full aspect-[16/8] overflow-hidden">
+            <img v-if="backdrop" :src="backdrop" :alt="movie.title" class="w-full h-full object-cover block scale-105" />
+            <div v-else class="w-full h-full bg-linear-to-br from-surface-alt to-surface" />
+            <div class="hero-fade" />
+            <!-- Countdown badge -->
+            <Transition name="badge">
+              <div v-if="showCountdown" class="modal-countdown" :class="urgency">
+                <span class="text-[10px] text-text-muted mr-1.5">Start within</span>
+                <span class="countdown-value">{{ fmtCountdown(countdownSecs!) }}</span>
+              </div>
+            </Transition>
+            <!-- Accent colored line at bottom of hero -->
+            <div class="absolute bottom-0 left-0 right-0 h-px" :style="{ background: `linear-gradient(90deg, transparent 0%, ${accentColor}30 50%, transparent 100%)` }" />
+          </div>
+          <!-- Action buttons (outside overflow-hidden so popover isn't clipped) -->
           <div class="hero-actions">
             <button class="watchlist-btn" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
               <BookmarkCheck v-if="isInWatchlist" :size="14" />
@@ -347,8 +351,6 @@ onUnmounted(() => {
               </Transition>
             </div>
           </div>
-          <!-- Accent colored line at bottom of hero -->
-          <div class="absolute bottom-0 left-0 right-0 h-px" :style="{ background: `linear-gradient(90deg, transparent 0%, ${accentColor}30 50%, transparent 100%)` }" />
         </div>
 
         <!-- Body -->
