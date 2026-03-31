@@ -5,11 +5,10 @@ import MovieModal from './components/MovieModal.vue'
 import { MOODS } from './data/moods'
 import {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain, Gem,
-  Bookmark, Volume2, VolumeX, CircleCheckBig, ThumbsUp, ThumbsDown,
+  Bookmark, CircleCheckBig, ThumbsUp, ThumbsDown,
 } from 'lucide-vue-next'
 import { useWatchlist } from './composables/useWatchlist'
 import { useWatched } from './composables/useWatched'
-import { useSound } from './composables/useSound'
 
 const moodIcons: Record<string, any> = {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain,
@@ -112,7 +111,6 @@ const personFilter = ref<{ id: number; name: string } | null>(null)
 
 const { watchlist, isInWatchlist, toggleWatchlist } = useWatchlist()
 const { watched, isWatched, getWatchedRating, markWatched, watchedStats } = useWatched()
-const { soundEnabled, sounds, haptic } = useSound()
 const activeTab = ref<'discover' | 'my-list' | 'watched'>('discover')
 
 const timeOptions = (() => {
@@ -331,8 +329,6 @@ async function fetchMovies(providerIds: string, startPage = 1) {
 }
 
 function toggleProvider(p: typeof PROVIDERS[number]) {
-  sounds.filterChange()
-  haptic()
   const next = new Set(selectedProviders.value)
   if (next.has(p.id)) next.delete(p.id)
   else next.add(p.id)
@@ -340,38 +336,25 @@ function toggleProvider(p: typeof PROVIDERS[number]) {
 }
 
 function toggleGenre(id: number) {
-  sounds.filterChange()
-  haptic()
   selectedGenre.value = selectedGenre.value === id ? null : id
 }
 
 function handleToggleWatchlist(movie: any) {
-  const added = toggleWatchlist(movie)
-  if (added) {
-    sounds.watchlistAdd()
-  } else {
-    sounds.watchlistRemove()
-  }
-  haptic()
+  toggleWatchlist(movie)
 }
 
 function handleMarkWatched(movie: any, rating: 'loved' | 'good' | 'meh' | 'awful') {
   markWatched(movie, rating)
-  sounds.markWatched()
-  haptic()
 }
 
 function switchBrowseMode(mode: 'mood' | 'genre') {
   if (browseBy.value === mode) return
-  sounds.filterChange()
   browseBy.value = mode
   selectedMood.value = null
   selectedGenre.value = null
 }
 
 function selectMood(moodId: string) {
-  sounds.moodSelect()
-  haptic()
   if (selectedMood.value === moodId) {
     selectedMood.value = null
     selectedGenre.value = null
@@ -481,7 +464,6 @@ const selectedMovie = ref<any>(null)
 const flipOrigin = ref<{ x: number; y: number; w: number; h: number } | null>(null)
 
 function openMovie(movie: any, cardRect?: DOMRect) {
-  sounds.modalOpen()
   if (cardRect) {
     flipOrigin.value = { x: cardRect.left, y: cardRect.top, w: cardRect.width, h: cardRect.height }
   } else {
@@ -494,7 +476,6 @@ function openMovie(movie: any, cardRect?: DOMRect) {
 }
 
 function closeMovie() {
-  sounds.modalClose()
   selectedMovie.value = null
   flipOrigin.value = null
   document.body.style.overflow = ''
@@ -545,10 +526,6 @@ function closeMovie() {
           <span v-if="watched.length" class="tab-count" style="background: color-mix(in srgb, #6cb4ee 15%, transparent); color: #6cb4ee;">{{ watched.length }}</span>
         </button>
         <div class="flex-1" />
-        <button class="sound-toggle" @click="soundEnabled = !soundEnabled" :title="soundEnabled ? 'Mute sounds' : 'Enable sounds'">
-          <Volume2 v-if="soundEnabled" :size="16" />
-          <VolumeX v-else :size="16" />
-        </button>
       </nav>
 
       <!-- ═══ Controls ═══ -->
@@ -1081,22 +1058,6 @@ function closeMovie() {
   color: var(--color-gold);
 }
 
-.sound-toggle {
-  @apply p-2.5 rounded-lg cursor-pointer border-0 bg-transparent;
-  transition: color 0.3s ease, background 0.3s ease;
-  color: var(--color-text-dim);
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-@media (hover: hover) and (pointer: fine) {
-  .sound-toggle:hover {
-    color: var(--color-text-muted);
-    background: var(--color-surface-alt);
-  }
-}
 /* ═══ Browse mode tabs ═══ */
 .browse-tab {
   @apply px-3 py-1.5 text-[10px] tracking-[3px] uppercase font-medium cursor-pointer
@@ -1115,11 +1076,6 @@ function closeMovie() {
   content: '/';
   @apply text-text-dim text-[10px] mr-3;
   opacity: 0.3;
-}
-
-.sound-toggle:focus-visible {
-  outline: 2px solid var(--color-text-dim);
-  outline-offset: 2px;
 }
 
 /* ═══ Watched stats bar ═══ */
@@ -1147,7 +1103,6 @@ function closeMovie() {
   .pill-btn,
   .tab-btn,
   .select-input,
-  .sound-toggle,
   .browse-tab,
   .toggle-thumb,
   .toggle-track {
