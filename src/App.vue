@@ -463,13 +463,23 @@ const displayWatchedAwful = useAnimatedCount(() => watchedStats.value.awful)
 const selectedMovie = ref<any>(null)
 const flipOrigin = ref<{ x: number; y: number; w: number; h: number } | null>(null)
 
-function openMovie(movie: any, cardRect?: DOMRect) {
+async function openMovie(movie: any, cardRect?: DOMRect) {
   if (cardRect) {
     flipOrigin.value = { x: cardRect.left, y: cardRect.top, w: cardRect.width, h: cardRect.height }
   } else {
     flipOrigin.value = null
   }
-  selectedMovie.value = movie
+
+  // Fetch full details if this is a minimal object (e.g. from Watched or My List)
+  let fullMovie = movie
+  if (!movie.credits && movie.id) {
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?append_to_response=credits,videos,release_dates,watch/providers`, { headers })
+      if (res.ok) fullMovie = await res.json()
+    } catch {}
+  }
+
+  selectedMovie.value = fullMovie
   const scrollbarW = window.innerWidth - document.documentElement.clientWidth
   document.body.style.overflow = 'hidden'
   document.body.style.paddingRight = `${scrollbarW}px`
