@@ -22,6 +22,9 @@ const hovered = ref(false)
 const cardEl = ref<HTMLElement | null>(null)
 const justBookmarked = ref(false)
 const posterLoaded = ref(false)
+function onMouseLeave() {
+  hovered.value = false
+}
 
 function fmtRuntime(min: number) {
   const h = Math.floor(min / 60)
@@ -77,12 +80,17 @@ const entranceDelay = computed(() =>
   props.entranceIndex != null ? `${Math.min(props.entranceIndex * 0.04, 0.6)}s` : '0s'
 )
 
-const glowGradient = computed(() => {
+const cardAccent = computed(() =>
+  props.providers.length ? props.providers[0]!.color : props.accentColor
+)
+
+const glowColor = computed(() => {
   const colors = props.providers.map(p => p.color)
-  if (colors.length <= 1) return null
-  // Duplicate first color at end so the conic gradient loops seamlessly
-  const stops = [...colors, colors[0]!]
-  return `conic-gradient(from 0deg, ${stops.join(', ')})`
+  if (colors.length > 1) {
+    const stops = [...colors, colors[0]!]
+    return `conic-gradient(from 0deg, ${stops.join(', ')})`
+  }
+  return cardAccent.value
 })
 
 const ratingConfig = computed(() => {
@@ -97,17 +105,23 @@ const ratingConfig = computed(() => {
 </script>
 
 <template>
-  <div class="card-wrap" :style="{ ...(glowGradient ? { '--provider-gradient': glowGradient } : {}), '--entrance-delay': entranceDelay }">
-    <div v-if="glowGradient" class="glow-ring"><div class="glow-ring-inner" /></div>
+  <div
+    class="card-wrap"
+    :style="{
+      '--provider-glow': glowColor,
+      '--entrance-delay': entranceDelay,
+    }"
+  >
+    <div class="glow-ring"><div class="glow-ring-inner" /></div>
     <div
       class="card"
-      :class="{ expiring: showCountdown, 'multi-glow': glowGradient }"
+      :class="{ expiring: showCountdown }"
       :style="{
-        '--accent': accentColor,
-        '--glow': showCountdown && urgency === 'critical' ? '#ff4444' : showCountdown ? '#f0a030' : accentColor,
+        '--accent': cardAccent,
+        '--glow': showCountdown && urgency === 'critical' ? '#ff4444' : showCountdown ? '#f0a030' : cardAccent,
       }"
       @mouseenter="hovered = true"
-      @mouseleave="hovered = false"
+      @mouseleave="onMouseLeave"
       ref="cardEl"
       @click="emit('select', movie, cardEl?.getBoundingClientRect())"
     >
@@ -172,7 +186,7 @@ const ratingConfig = computed(() => {
         </p>
 
         <div v-if="movie.runtime" class="flex items-center gap-2">
-          <span class="font-mono text-[11px] font-medium tracking-wide" :style="{ color: accentColor }">
+          <span class="font-mono text-[11px] font-medium tracking-wide" :style="{ color: cardAccent }">
             {{ fmtRuntime(movie.runtime) }}
           </span>
           <span class="text-text-faint text-[8px]">/</span>
@@ -215,9 +229,8 @@ const ratingConfig = computed(() => {
 
 .card-wrap {
   position: relative;
-  transform: translateY(0) scale(1);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: card-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: card-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   animation-delay: var(--entrance-delay, 0s);
 }
 
@@ -241,11 +254,12 @@ const ratingConfig = computed(() => {
 .card {
   @apply relative rounded-xl overflow-hidden cursor-pointer bg-surface-raised;
   aspect-ratio: 2/3;
-  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
+
 .provider-icon {
   width: 16px;
   height: 16px;
@@ -258,18 +272,17 @@ const ratingConfig = computed(() => {
   .card-wrap:hover .card {
     box-shadow:
       0 24px 48px rgba(0, 0, 0, 0.5),
-      0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent),
-      0 0 40px -8px color-mix(in srgb, var(--accent) 10%, transparent);
+      0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 }
 
-/* Multi-provider animated glow */
+/* Provider glow ring */
 .glow-ring {
   position: absolute;
   inset: -3px;
   border-radius: 14px;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
   pointer-events: none;
   z-index: -1;
   overflow: hidden;
@@ -282,18 +295,13 @@ const ratingConfig = computed(() => {
   height: 150%;
   translate: -50% -50%;
   border-radius: 50%;
-  background: var(--provider-gradient);
+  background: var(--provider-glow);
   filter: blur(14px);
   animation: glow-spin 5s linear infinite;
 }
 @media (hover: hover) and (pointer: fine) {
   .card-wrap:hover .glow-ring {
     opacity: 0.7;
-  }
-  .card-wrap:hover .card.multi-glow {
-    box-shadow:
-      0 24px 48px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -327,7 +335,7 @@ const ratingConfig = computed(() => {
 
 .poster-img {
   @apply w-full h-full object-cover block;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
   opacity: 0;
 }
 .poster-img.loaded {
@@ -392,7 +400,7 @@ const ratingConfig = computed(() => {
 /* Overlay */
 .overlay {
   @apply absolute inset-0 flex flex-col justify-end;
-  padding: 14px 14px 12px;
+  padding: 14px;
   background: linear-gradient(
     to top,
     rgba(6, 10, 14, 0.97) 0%,
@@ -401,7 +409,7 @@ const ratingConfig = computed(() => {
     rgba(6, 10, 14, 0.05) 70%,
     transparent 100%
   );
-  transition: background 0.25s ease;
+  transition: background 0.3s ease;
 }
 .overlay.hovered {
   background: linear-gradient(
@@ -427,7 +435,7 @@ const ratingConfig = computed(() => {
 
 .info {
   transform: translateY(0);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .info.lifted {
   transform: translateY(-4px);
@@ -439,9 +447,9 @@ const ratingConfig = computed(() => {
   grid-template-rows: 0fr;
   opacity: 0;
   transform: translateY(6px);
-  transition: grid-template-rows 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.2s ease,
-              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.25s ease,
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 .hover-reveal > * {
@@ -516,15 +524,16 @@ const ratingConfig = computed(() => {
   content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent 0%, rgba(28, 231, 131, 0.15) 50%, transparent 100%);
   animation: gem-shimmer 3s linear infinite;
+  will-change: transform;
 }
 @keyframes gem-shimmer {
-  0%, 100% { left: -100%; }
-  50% { left: 100%; }
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
 }
 
 /* Watched rating badge */
