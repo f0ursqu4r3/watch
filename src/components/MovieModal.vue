@@ -789,10 +789,9 @@ onUnmounted(() => {
 /* Rating popover */
 .rating-popover {
   position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  transform-origin: bottom center;
+  top: calc(100% + 10px);
+  right: 0;
+  transform-origin: top right;
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border-hover);
   border-radius: 12px;
@@ -835,35 +834,14 @@ onUnmounted(() => {
 }
 .popover-arrow {
   position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%) rotate(45deg);
+  top: -6px;
+  right: 20px;
+  transform: rotate(45deg);
   width: 12px;
   height: 12px;
   background: var(--color-surface-alt);
-  border-right: 1px solid var(--color-border-hover);
-  border-bottom: 1px solid var(--color-border-hover);
-}
-
-@media (max-width: 640px) {
-  .rating-popover {
-    left: auto;
-    right: 0;
-    transform: none;
-  }
-  .popover-arrow {
-    left: auto;
-    right: 20px;
-    transform: rotate(45deg);
-  }
-  .popover-enter-from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  .popover-leave-to {
-    opacity: 0;
-    transform: none;
-  }
+  border-top: 1px solid var(--color-border-hover);
+  border-left: 1px solid var(--color-border-hover);
 }
 
 /* Popover transitions */
@@ -875,11 +853,10 @@ onUnmounted(() => {
 }
 .popover-enter-from {
   opacity: 0;
-  transform: translateX(-50%) scale(0.95);
+  transform: scale(0.95);
 }
 .popover-leave-to {
   opacity: 0;
-  transform: translateX(-50%);
 }
 
 /* Reduced motion */
