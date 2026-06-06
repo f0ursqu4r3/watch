@@ -46,16 +46,13 @@ async function loadGenres() {
 interface Provider { id: number; name: string; color: string; logoPath: string | null }
 const providers = ref<Provider[]>([])
 
-function parseTimeToMinutes(timeStr: string) {
-  const parts = timeStr.split(" ")
-  const timePart = parts[0] ?? "0:0"
-  const period = parts[1]
-  const nums = timePart.split(":").map(Number)
-  let hours = nums[0] ?? 0
-  const minutes = nums[1] ?? 0
-  if (period === "PM" && hours !== 12) hours += 12
-  if (period === "AM" && hours === 12) hours = 0
-  return hours * 60 + minutes
+// A selected time is stored as minutes-since-midnight (0–1439), or null for
+// "Now"/"Any time". Display labels are formatted per the active locale via
+// fmt.clock, so the dropdown never bakes in the browser locale.
+function minutesToMs(min: number) {
+  const d = new Date()
+  d.setHours(Math.floor(min / 60), min % 60, 0, 0)
+  return d.getTime()
 }
 
 const savedProviders = (() => {
@@ -76,8 +73,8 @@ const browseBy = ref<'mood' | 'genre'>('mood')
 const hiddenGemsOnly = ref(false)
 const sortBy = ref("popularity.desc")
 const expiringFirst = ref(false)
-const startTimeStr = ref("")
-const endTimeStr = ref("")
+const startMinutes = ref<number | null>(null)
+const endMinutes = ref<number | null>(null)
 const movies = ref<any[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -91,13 +88,12 @@ const { watched, isWatched, getWatchedRating, markWatched, watchedStats } = useW
 const activeTab = ref<'discover' | 'my-list' | 'watched'>('discover')
 
 const timeOptions = (() => {
-  const opts: string[] = []
-  const now = new Date()
-  const start = new Date(now)
-  start.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0)
+  const opts: number[] = []
+  const base = new Date()
+  base.setMinutes(Math.ceil(base.getMinutes() / 15) * 15, 0, 0)
   for (let i = 1; i <= 48; i++) {
-    const t = new Date(start.getTime() + i * 15 * 60000)
-    opts.push(t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))
+    const t = new Date(base.getTime() + i * 15 * 60000)
+    opts.push(t.getHours() * 60 + t.getMinutes())
   }
   return opts
 })()
@@ -113,30 +109,28 @@ const timeOfDayKey = computed(() => {
 
 let tickTimer: ReturnType<typeof setInterval> | null = null
 
-watch([startTimeStr, endTimeStr], ([s, e]) => {
+watch([startMinutes, endMinutes], ([s, e]) => {
   if (tickTimer) { clearInterval(tickTimer); tickTimer = null }
-  if (s || e) {
+  if (s !== null || e !== null) {
     tickTimer = setInterval(() => { now.value = Date.now() }, 1000)
   }
-  if (!e || s) expiringFirst.value = false
+  if (e === null || s !== null) expiringFirst.value = false
 }, { immediate: true })
 
 onUnmounted(() => { if (tickTimer) clearInterval(tickTimer) })
 
 const startMs = computed(() => {
-  if (!startTimeStr.value) return null
-  const mins = parseTimeToMinutes(startTimeStr.value)
+  if (startMinutes.value === null) return null
   const d = new Date()
-  d.setHours(Math.floor(mins / 60), mins % 60, 0, 0)
+  d.setHours(Math.floor(startMinutes.value / 60), startMinutes.value % 60, 0, 0)
   if (d.getTime() < now.value - 60000) d.setDate(d.getDate() + 1)
   return d.getTime()
 })
 
 const deadlineMs = computed(() => {
-  if (!endTimeStr.value) return null
-  const endMins = parseTimeToMinutes(endTimeStr.value)
+  if (endMinutes.value === null) return null
   const today = new Date()
-  today.setHours(Math.floor(endMins / 60), endMins % 60, 0, 0)
+  today.setHours(Math.floor(endMinutes.value / 60), endMinutes.value % 60, 0, 0)
   if (today.getTime() <= now.value) today.setDate(today.getDate() + 1)
   return today.getTime()
 })
@@ -584,25 +578,25 @@ function closeMovie() {
           <div class="min-w-36 max-sm:min-w-0">
             <p class="control-label">{{ t('controls.startAt') }}</p>
             <select
-              v-model="startTimeStr"
+              v-model="startMinutes"
               class="select-input"
-              :class="{ active: !!startTimeStr }"
-              :style="startTimeStr ? { '--c': providerColor } : {}"
+              :class="{ active: startMinutes !== null }"
+              :style="startMinutes !== null ? { '--c': providerColor } : {}"
             >
-              <option value="">{{ t('controls.now') }}</option>
-              <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+              <option :value="null">{{ t('controls.now') }}</option>
+              <option v-for="slot in timeOptions" :key="slot" :value="slot">{{ fmt.clock(minutesToMs(slot)) }}</option>
             </select>
           </div>
           <div class="min-w-36 max-sm:min-w-0">
             <p class="control-label">{{ t('controls.doneBy') }}</p>
             <select
-              v-model="endTimeStr"
+              v-model="endMinutes"
               class="select-input"
-              :class="{ active: !!endTimeStr }"
-              :style="endTimeStr ? { '--c': providerColor } : {}"
+              :class="{ active: endMinutes !== null }"
+              :style="endMinutes !== null ? { '--c': providerColor } : {}"
             >
-              <option value="">{{ t('controls.anyTime') }}</option>
-              <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+              <option :value="null">{{ t('controls.anyTime') }}</option>
+              <option v-for="slot in timeOptions" :key="slot" :value="slot">{{ fmt.clock(minutesToMs(slot)) }}</option>
             </select>
             <Transition name="hint">
               <p v-if="maxRuntimeMinutes != null && maxRuntimeMinutes > 0" class="mt-2.5 text-[11px] text-text-muted tracking-wide tabular-nums flex items-center gap-1.5">
@@ -670,7 +664,7 @@ function closeMovie() {
               <Gem :size="14" />
               {{ t('filters.hiddenGems') }}
             </button>
-            <label v-if="!startTimeStr && endTimeStr" class="expiring-toggle" :style="{ '--c': providerColor }">
+            <label v-if="startMinutes === null && endMinutes !== null" class="expiring-toggle" :style="{ '--c': providerColor }">
               <input type="checkbox" v-model="expiringFirst" class="sr-only" />
               <span class="toggle-track" :class="{ on: expiringFirst }">
                 <span class="toggle-thumb" />
@@ -730,7 +724,7 @@ function closeMovie() {
 
       <!-- ═══ Results ═══ -->
       <template v-if="!loading && hasProviders && activeTab === 'discover'">
-        <div v-if="endTimeStr" class="flex items-end gap-4 mb-8">
+        <div v-if="endMinutes !== null" class="flex items-end gap-4 mb-8">
           <span
             class="font-display text-5xl font-bold leading-none tracking-tight"
             :style="activeProviderColors.length > 1
@@ -741,7 +735,7 @@ function closeMovie() {
           </span>
           <div class="pb-1.5">
             <span class="text-text-muted text-[13px]">
-              {{ t('results.finishingBefore', { time: endTimeStr }) }}
+              {{ t('results.finishingBefore', { time: fmt.clock(minutesToMs(endMinutes!)) }) }}
             </span>
             <template v-if="movies.length > filtered.length">
               <span class="text-text-dim text-[13px] ms-1.5">
