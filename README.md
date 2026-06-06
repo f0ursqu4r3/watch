@@ -11,6 +11,25 @@ A cinematic movie discovery app. Browse what's streaming, filter by genre, sort 
 - Movie detail modal with cast, director, trailers, and runtime info
 - Click any cast member or director to discover their other films
 - Infinite scroll with parallel page loading
+- Localized UI and content across 6 languages and 12 regions (see below)
+
+## Localization
+
+The interface and movie data are localized. **Language** (what you read) and **region**
+(which streaming market) are independent settings.
+
+- **Languages:** English, Spanish, French, German, Japanese, and Arabic. Arabic renders
+  right-to-left; the whole layout mirrors. Numbers and times format per locale (Arabic uses
+  Arabic-Indic digits).
+- **Regions:** US, GB, ES, FR, DE, JP, MX, BR, CA, AU, IN, SA. The streaming-provider list is
+  fetched live from TMDB for the selected region, and movie titles, overviews, genres, and
+  certifications come back in the active language.
+- **Detection:** on first visit the app picks a language and region from your browser
+  (`navigator.languages`), then remembers any manual change in `localStorage`. Switch either at
+  any time from the header pickers.
+
+UI strings live in `src/locales/*.json`; a parity test (`src/locales/parity.test.ts`) keeps every
+locale in sync with the English source.
 
 ## Tech
 
