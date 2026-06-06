@@ -241,7 +241,6 @@ function movieProviders(movie: any) {
 
 const PAGES_PER_BATCH = 3
 const MAX_PAGE = 15
-const MAX_PROVIDERS = 16
 
 let fetchSeq = 0
 let providersSeq = 0
@@ -373,7 +372,6 @@ async function loadProviders() {
     if (seq !== providersSeq) return
     providers.value = list
       .sort((a, b) => (a.display_priority ?? 999) - (b.display_priority ?? 999))
-      .slice(0, MAX_PROVIDERS)
       .map(p => ({
         id: p.provider_id,
         name: p.provider_name,
