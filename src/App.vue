@@ -5,7 +5,7 @@ import MovieModal from './components/MovieModal.vue'
 import { MOODS } from './data/moods'
 import {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain, Gem,
-  Bookmark, CircleCheckBig, ThumbsUp, ThumbsDown,
+  Bookmark, CircleCheckBig, ThumbsUp, ThumbsDown, X,
 } from 'lucide-vue-next'
 import { useWatchlist } from './composables/useWatchlist'
 import { useWatched } from './composables/useWatched'
@@ -15,6 +15,7 @@ import { useFormat } from './composables/useFormat'
 import { useLocale } from './composables/useLocale'
 import { providerColor as providerColorFor } from './utils/providerColor'
 import LocaleSwitcher from './components/LocaleSwitcher.vue'
+import ServiceMenu from './components/ServiceMenu.vue'
 
 const moodIcons: Record<string, any> = {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain,
@@ -307,12 +308,16 @@ async function fetchMovies(providerIds: string, startPage = 1) {
   }
 }
 
-function toggleProvider(p: Provider) {
+function toggleProviderById(id: number) {
   const next = new Set(selectedProviders.value)
-  if (next.has(p.id)) next.delete(p.id)
-  else next.add(p.id)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
   selectedProviders.value = next
 }
+
+const selectedProviderList = computed(() =>
+  providers.value.filter(p => selectedProviders.value.has(p.id))
+)
 
 function toggleGenre(id: number) {
   selectedGenre.value = selectedGenre.value === id ? null : id
@@ -559,18 +564,24 @@ function closeMovie() {
       <div class="grid grid-cols-[1fr_auto] gap-10 items-start mb-12 max-sm:grid-cols-1 max-sm:gap-8">
         <div>
           <p class="control-label">{{ t('controls.myServices') }}</p>
-          <div class="flex flex-wrap gap-2.5">
-            <button
-              v-for="p in providers"
+          <div class="flex flex-wrap items-center gap-2.5">
+            <div
+              v-for="p in selectedProviderList"
               :key="p.id"
-              class="pill-btn"
-              :class="{ active: selectedProviders.has(p.id) }"
+              class="pill-btn active"
               :style="{ '--c': p.color }"
-              @click="toggleProvider(p)"
             >
               <span class="pill-dot" :style="{ background: p.color }" />
               {{ p.name }}
-            </button>
+              <button
+                class="pill-remove"
+                :aria-label="t('controls.removeService', { service: p.name })"
+                @click="toggleProviderById(p.id)"
+              >
+                <X :size="12" />
+              </button>
+            </div>
+            <ServiceMenu :providers="providers" :selected="selectedProviders" @toggle="toggleProviderById" />
           </div>
         </div>
 
@@ -929,6 +940,21 @@ function closeMovie() {
 .pill-btn.active .pill-dot {
   @apply opacity-100;
   box-shadow: 0 0 6px currentColor;
+}
+.pill-remove {
+  @apply inline-flex items-center justify-center ms-0.5 -me-1.5 p-0.5 rounded-full border-0 bg-transparent cursor-pointer;
+  color: color-mix(in srgb, var(--c) 70%, white);
+  opacity: 0.6;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pill-remove:hover {
+    opacity: 1;
+    background: color-mix(in srgb, var(--c) 20%, transparent);
+  }
+}
+.pill-remove:active {
+  transform: scale(0.9);
 }
 .pill-sm {
   @apply text-xs px-4 py-2;
