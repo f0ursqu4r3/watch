@@ -281,7 +281,7 @@ onUnmounted(() => {
             <!-- Countdown badge -->
             <Transition name="badge">
               <div v-if="showCountdown" class="modal-countdown" :class="urgency">
-                <span class="text-[10px] text-text-muted mr-1.5">{{ t('modal.startWithin') }}</span>
+                <span class="text-[10px] text-text-muted me-1.5">{{ t('modal.startWithin') }}</span>
                 <span class="countdown-value">{{ fmt.countdown(countdownSecs!) }}</span>
               </div>
             </Transition>
