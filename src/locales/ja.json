@@ -22,7 +22,10 @@
     "doneBy": "終了時刻",
     "anyTime": "時間指定なし",
     "maxRuntime": "上映時間 最長{runtime}",
-    "sortBy": "並び替え"
+    "sortBy": "並び替え",
+    "addServices": "サービスを追加",
+    "searchServices": "サービスを検索",
+    "removeService": "{service} を削除"
   },
   "browse": {
     "mood": "気分",

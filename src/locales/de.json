@@ -22,7 +22,10 @@
     "doneBy": "Fertig bis",
     "anyTime": "Egal wann",
     "maxRuntime": "Maximale Laufzeit {runtime}",
-    "sortBy": "Sortieren nach"
+    "sortBy": "Sortieren nach",
+    "addServices": "Dienste hinzufügen",
+    "searchServices": "Dienste suchen",
+    "removeService": "{service} entfernen"
   },
   "browse": {
     "mood": "Stimmung",

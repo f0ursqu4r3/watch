@@ -22,7 +22,10 @@
     "doneBy": "Terminé avant",
     "anyTime": "Peu importe l'heure",
     "maxRuntime": "Durée max de {runtime}",
-    "sortBy": "Trier par"
+    "sortBy": "Trier par",
+    "addServices": "Ajouter des services",
+    "searchServices": "Rechercher des services",
+    "removeService": "Retirer {service}"
   },
   "browse": {
     "mood": "Humeur",

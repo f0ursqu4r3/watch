@@ -22,7 +22,10 @@
     "doneBy": "الانتهاء قبل",
     "anyTime": "أي وقت",
     "maxRuntime": "أقصى مدة {runtime}",
-    "sortBy": "ترتيب حسب"
+    "sortBy": "ترتيب حسب",
+    "addServices": "إضافة خدمات",
+    "searchServices": "البحث عن خدمات",
+    "removeService": "إزالة {service}"
   },
   "browse": {
     "mood": "المزاج",
