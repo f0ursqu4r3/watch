@@ -1,4 +1,3 @@
-import { computed } from 'vue'
 import { useLocale } from './useLocale'
 
 const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
@@ -32,10 +31,6 @@ export function fmtRatingFor(value: number, lang: string): string {
   return new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value)
 }
 
-export function fmtIntFor(value: number, lang: string): string {
-  return new Intl.NumberFormat(lang).format(value)
-}
-
 /** Component-facing wrapper bound to the active locale. */
 export function useFormat() {
   const { language } = useLocale()
@@ -44,8 +39,5 @@ export function useFormat() {
     clock: (ms: number) => fmtClockFor(ms, language.value),
     countdown: (secs: number) => fmtCountdownFor(secs, language.value),
     rating: (v: number) => fmtRatingFor(v, language.value),
-    int: (v: number) => fmtIntFor(v, language.value),
-    digits: (s: string) => localizeDigits(s, language.value),
-    lang: computed(() => language.value),
   }
 }

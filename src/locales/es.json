@@ -73,7 +73,8 @@
     "cry-it-out": "Para llorar a gusto"
   },
   "card": {
-    "noRuntime": "Sin duración"
+    "noRuntime": "Sin duración",
+    "gemBadge": "JOYA"
   },
   "modal": {
     "close": "Cerrar",

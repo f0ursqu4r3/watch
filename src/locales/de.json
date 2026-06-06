@@ -73,7 +73,8 @@
     "cry-it-out": "Zum Weinen"
   },
   "card": {
-    "noRuntime": "Keine Laufzeit"
+    "noRuntime": "Keine Laufzeit",
+    "gemBadge": "PERLE"
   },
   "modal": {
     "close": "Schließen",

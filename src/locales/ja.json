@@ -73,7 +73,8 @@
     "cry-it-out": "思いきり泣ける"
   },
   "card": {
-    "noRuntime": "上映時間 情報なし"
+    "noRuntime": "上映時間 情報なし",
+    "gemBadge": "名作"
   },
   "modal": {
     "close": "閉じる",

@@ -73,7 +73,8 @@
     "cry-it-out": "Cry It Out"
   },
   "card": {
-    "noRuntime": "No runtime"
+    "noRuntime": "No runtime",
+    "gemBadge": "GEM"
   },
   "modal": {
     "close": "Close",

@@ -73,7 +73,8 @@
     "cry-it-out": "Pour pleurer un bon coup"
   },
   "card": {
-    "noRuntime": "Durée inconnue"
+    "noRuntime": "Durée inconnue",
+    "gemBadge": "PÉPITE"
   },
   "modal": {
     "close": "Fermer",

@@ -152,7 +152,7 @@ const ratingConfig = computed(() => {
     <!-- Gem badge -->
     <div v-if="isHiddenGem && !isWatched" class="gem-badge">
       <Gem :size="10" />
-      <span>GEM</span>
+      <span>{{ t('card.gemBadge') }}</span>
     </div>
 
     <!-- Watched rating badge -->

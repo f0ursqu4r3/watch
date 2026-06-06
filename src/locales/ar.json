@@ -73,7 +73,8 @@
     "cry-it-out": "للبكاء بحرية"
   },
   "card": {
-    "noRuntime": "المدة غير متوفرة"
+    "noRuntime": "المدة غير متوفرة",
+    "gemBadge": "جوهرة"
   },
   "modal": {
     "close": "إغلاق",
