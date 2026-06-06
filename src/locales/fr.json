@@ -33,13 +33,13 @@
     "genre": "Genre"
   },
   "sort": {
-    "popularity.desc": "Les plus populaires",
-    "runtime.asc": "Les plus courts d'abord",
-    "runtime.desc": "Les plus longs d'abord",
-    "vote_average.desc": "Les mieux notés",
-    "primary_release_date.desc": "Les plus récents",
-    "primary_release_date.asc": "Les plus anciens",
-    "revenue.desc": "Plus gros succès au box-office"
+    "popularity_desc": "Les plus populaires",
+    "runtime_asc": "Les plus courts d'abord",
+    "runtime_desc": "Les plus longs d'abord",
+    "vote_average_desc": "Les mieux notés",
+    "primary_release_date_desc": "Les plus récents",
+    "primary_release_date_asc": "Les plus anciens",
+    "revenue_desc": "Plus gros succès au box-office"
   },
   "filters": {
     "hiddenGems": "Pépites cachées",

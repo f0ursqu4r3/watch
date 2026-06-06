@@ -33,13 +33,13 @@
     "genre": "النوع"
   },
   "sort": {
-    "popularity.desc": "الأكثر رواجاً",
-    "runtime.asc": "الأقصر أولاً",
-    "runtime.desc": "الأطول أولاً",
-    "vote_average.desc": "الأعلى تقييماً",
-    "primary_release_date.desc": "الأحدث",
-    "primary_release_date.asc": "الأقدم",
-    "revenue.desc": "الأعلى إيرادات"
+    "popularity_desc": "الأكثر رواجاً",
+    "runtime_asc": "الأقصر أولاً",
+    "runtime_desc": "الأطول أولاً",
+    "vote_average_desc": "الأعلى تقييماً",
+    "primary_release_date_desc": "الأحدث",
+    "primary_release_date_asc": "الأقدم",
+    "revenue_desc": "الأعلى إيرادات"
   },
   "filters": {
     "hiddenGems": "كنوز خفية",

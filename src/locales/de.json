@@ -33,13 +33,13 @@
     "genre": "Genre"
   },
   "sort": {
-    "popularity.desc": "Beliebteste",
-    "runtime.asc": "Kürzeste zuerst",
-    "runtime.desc": "Längste zuerst",
-    "vote_average.desc": "Bestbewertet",
-    "primary_release_date.desc": "Neueste",
-    "primary_release_date.asc": "Älteste",
-    "revenue.desc": "Höchste Einnahmen"
+    "popularity_desc": "Beliebteste",
+    "runtime_asc": "Kürzeste zuerst",
+    "runtime_desc": "Längste zuerst",
+    "vote_average_desc": "Bestbewertet",
+    "primary_release_date_desc": "Neueste",
+    "primary_release_date_asc": "Älteste",
+    "revenue_desc": "Höchste Einnahmen"
   },
   "filters": {
     "hiddenGems": "Geheimtipps",

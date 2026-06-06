@@ -33,13 +33,13 @@
     "genre": "ジャンル"
   },
   "sort": {
-    "popularity.desc": "人気順",
-    "runtime.asc": "短い順",
-    "runtime.desc": "長い順",
-    "vote_average.desc": "評価が高い順",
-    "primary_release_date.desc": "新しい順",
-    "primary_release_date.asc": "古い順",
-    "revenue.desc": "興行収入が高い順"
+    "popularity_desc": "人気順",
+    "runtime_asc": "短い順",
+    "runtime_desc": "長い順",
+    "vote_average_desc": "評価が高い順",
+    "primary_release_date_desc": "新しい順",
+    "primary_release_date_asc": "古い順",
+    "revenue_desc": "興行収入が高い順"
   },
   "filters": {
     "hiddenGems": "隠れた名作",

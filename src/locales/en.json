@@ -33,13 +33,13 @@
     "genre": "Genre"
   },
   "sort": {
-    "popularity.desc": "Most Popular",
-    "runtime.asc": "Shortest First",
-    "runtime.desc": "Longest First",
-    "vote_average.desc": "Highest Rated",
-    "primary_release_date.desc": "Newest",
-    "primary_release_date.asc": "Oldest",
-    "revenue.desc": "Highest Grossing"
+    "popularity_desc": "Most Popular",
+    "runtime_asc": "Shortest First",
+    "runtime_desc": "Longest First",
+    "vote_average_desc": "Highest Rated",
+    "primary_release_date_desc": "Newest",
+    "primary_release_date_asc": "Oldest",
+    "revenue_desc": "Highest Grossing"
   },
   "filters": {
     "hiddenGems": "Hidden Gems",

@@ -661,7 +661,7 @@ function closeMovie() {
                 :class="{ active: sortBy !== 'popularity.desc' }"
                 :style="{ '--c': providerColor }"
               >
-                <option v-for="value in SORT_VALUES" :key="value" :value="value">{{ t('sort.' + value) }}</option>
+                <option v-for="value in SORT_VALUES" :key="value" :value="value">{{ t('sort.' + value.replace(/\./g, '_')) }}</option>
               </select>
             </div>
             <button

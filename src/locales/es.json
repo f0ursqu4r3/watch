@@ -33,13 +33,13 @@
     "genre": "Género"
   },
   "sort": {
-    "popularity.desc": "Más populares",
-    "runtime.asc": "Más cortas primero",
-    "runtime.desc": "Más largas primero",
-    "vote_average.desc": "Mejor valoradas",
-    "primary_release_date.desc": "Más recientes",
-    "primary_release_date.asc": "Más antiguas",
-    "revenue.desc": "Mayor recaudación"
+    "popularity_desc": "Más populares",
+    "runtime_asc": "Más cortas primero",
+    "runtime_desc": "Más largas primero",
+    "vote_average_desc": "Mejor valoradas",
+    "primary_release_date_desc": "Más recientes",
+    "primary_release_date_asc": "Más antiguas",
+    "revenue_desc": "Mayor recaudación"
   },
   "filters": {
     "hiddenGems": "Joyas ocultas",
