@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Gem, Bookmark, BookmarkCheck, ThumbsUp, ThumbsDown } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import { useFormat } from '../composables/useFormat'
+const { t } = useI18n()
+const fmt = useFormat()
 
 const props = defineProps<{
   movie: any
@@ -26,15 +30,8 @@ function onMouseLeave() {
   hovered.value = false
 }
 
-function fmtRuntime(min: number) {
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
-
 function endTime(runtime: number) {
-  const end = new Date(props.startAt + runtime * 60000)
-  return end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return fmt.clock(props.startAt + runtime * 60000)
 }
 
 const countdownSecs = computed(() => {
@@ -43,14 +40,6 @@ const countdownSecs = computed(() => {
   return Math.max(0, Math.floor((latestStart - props.now) / 1000))
 })
 
-function fmtCountdown(totalSecs: number) {
-  const h = Math.floor(totalSecs / 3600)
-  const m = Math.floor((totalSecs % 3600) / 60)
-  const s = totalSecs % 60
-  const pad = (n: number) => String(n).padStart(2, '0')
-  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`
-  return `${m}:${pad(s)}`
-}
 
 const urgency = computed(() => {
   if (countdownSecs.value == null) return null
@@ -156,7 +145,7 @@ const ratingConfig = computed(() => {
     <!-- Countdown badge -->
     <Transition name="badge">
       <div v-if="showCountdown" class="countdown-badge" :class="urgency">
-        <span class="countdown-time">{{ fmtCountdown(countdownSecs!) }}</span>
+        <span class="countdown-time">{{ fmt.countdown(countdownSecs!) }}</span>
       </div>
     </Transition>
 
@@ -187,12 +176,12 @@ const ratingConfig = computed(() => {
 
         <div v-if="movie.runtime" class="flex items-center gap-2">
           <span class="font-mono text-[11px] font-medium tracking-wide" :style="{ color: cardAccent }">
-            {{ fmtRuntime(movie.runtime) }}
+            {{ fmt.runtime(movie.runtime) }}
           </span>
           <span class="text-text-faint text-[8px]">/</span>
           <span class="text-[10px] text-text-muted">{{ endTime(movie.runtime) }}</span>
         </div>
-        <span v-else class="text-[11px] text-text-dim italic">No runtime</span>
+        <span v-else class="text-[11px] text-text-dim italic">{{ t('card.noRuntime') }}</span>
 
         <div class="hover-reveal" :class="{ visible: hovered }">
           <div>
@@ -210,7 +199,7 @@ const ratingConfig = computed(() => {
             <div v-if="movie.vote_average > 0" class="mt-2 flex items-center gap-2">
               <div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5">
                 <span class="text-gold text-[10px]">&#9733;</span>
-                <span class="text-text-secondary text-[11px] font-medium">{{ movie.vote_average.toFixed(1) }}</span>
+                <span class="text-text-secondary text-[11px] font-medium">{{ fmt.rating(movie.vote_average) }}</span>
               </div>
               <span v-if="movie.release_date" class="text-text-muted text-[11px]">
                 {{ movie.release_date.slice(0, 4) }}
