@@ -362,7 +362,7 @@ function refetch() {
   }
 }
 
-interface RawProvider { provider_id: number; provider_name: string; display_priority?: number; logo_path?: string | null }
+interface RawProvider { provider_id: number; provider_name: string; logo_path?: string | null }
 
 async function loadProviders() {
   const seq = ++providersSeq
@@ -371,7 +371,7 @@ async function loadProviders() {
     const list = (data.results ?? []) as RawProvider[]
     if (seq !== providersSeq) return
     providers.value = list
-      .sort((a, b) => (a.display_priority ?? 999) - (b.display_priority ?? 999))
+      .sort((a, b) => a.provider_name.localeCompare(b.provider_name))
       .map(p => ({
         id: p.provider_id,
         name: p.provider_name,
