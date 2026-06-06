@@ -153,7 +153,7 @@ onUnmounted(() => {
 }
 
 .svc-list {
-  @apply list-none m-0 p-0 flex flex-col gap-0.5 max-h-64 overflow-y-auto;
+  @apply list-none m-0 p-0 flex flex-col gap-0.5 max-h-64 overflow-y-auto overscroll-contain;
 }
 
 .svc-row {
