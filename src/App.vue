@@ -9,65 +9,42 @@ import {
 } from 'lucide-vue-next'
 import { useWatchlist } from './composables/useWatchlist'
 import { useWatched } from './composables/useWatched'
+import { useI18n } from 'vue-i18n'
+import { useTmdb } from './composables/useTmdb'
+import { useFormat } from './composables/useFormat'
+import { useLocale } from './composables/useLocale'
+import { providerColor as providerColorFor } from './utils/providerColor'
+import LocaleSwitcher from './components/LocaleSwitcher.vue'
 
 const moodIcons: Record<string, any> = {
   Laugh, Flame, Heart, Brain, Skull, Coffee, Headphones, CloudRain,
 }
 
-const TMDB_TOKEN = import.meta.env.VITE_TMDB_TOKEN
+const { t } = useI18n()
+const { tmdb } = useTmdb()
+const fmt = useFormat()
+const { language, region, tmdbLang } = useLocale()
 
-const GENRES = [
-  { id: 28,    name: "Action" },
-  { id: 12,    name: "Adventure" },
-  { id: 16,    name: "Animation" },
-  { id: 35,    name: "Comedy" },
-  { id: 80,    name: "Crime" },
-  { id: 99,    name: "Documentary" },
-  { id: 18,    name: "Drama" },
-  { id: 10751, name: "Family" },
-  { id: 14,    name: "Fantasy" },
-  { id: 36,    name: "History" },
-  { id: 27,    name: "Horror" },
-  { id: 10402, name: "Music" },
-  { id: 9648,  name: "Mystery" },
-  { id: 10749, name: "Romance" },
-  { id: 878,   name: "Sci-Fi" },
-  { id: 53,    name: "Thriller" },
-  { id: 10752, name: "War" },
-  { id: 37,    name: "Western" },
+const SORT_VALUES = [
+  'popularity.desc',
+  'runtime.asc',
+  'runtime.desc',
+  'vote_average.desc',
+  'primary_release_date.desc',
+  'primary_release_date.asc',
+  'revenue.desc',
 ]
 
-const SORT_OPTIONS = [
-  { value: "popularity.desc",    label: "Most Popular" },
-  { value: "runtime.asc",        label: "Shortest First" },
-  { value: "runtime.desc",       label: "Longest First" },
-  { value: "vote_average.desc",  label: "Highest Rated" },
-  { value: "primary_release_date.desc", label: "Newest" },
-  { value: "primary_release_date.asc",  label: "Oldest" },
-  { value: "revenue.desc",       label: "Highest Grossing" },
-]
-
-const PROVIDERS = [
-  { id: 8,   name: "Netflix",      color: "#E50914" },
-  { id: 9,   name: "Prime Video",  color: "#00A8E1" },
-  { id: 337, name: "Disney+",      color: "#1133A6" },
-  { id: 384, name: "HBO Max",      color: "#5822B4" },
-  { id: 15,  name: "Hulu",         color: "#1CE783" },
-  { id: 386, name: "Peacock",      color: "#FFD700" },
-  { id: 531, name: "Paramount+",   color: "#0064FF" },
-  { id: 283, name: "Crunchyroll",  color: "#F47521" },
-]
-
-const headers = {
-  Authorization: `Bearer ${TMDB_TOKEN}`,
-  "Content-Type": "application/json",
+const genres = ref<{ id: number; name: string }[]>([])
+async function loadGenres() {
+  try {
+    const data = await tmdb('/genre/movie/list')
+    genres.value = data.genres ?? []
+  } catch { genres.value = [] }
 }
 
-function fmtRuntime(min: number) {
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
+interface Provider { id: number; name: string; color: string; logoPath: string | null }
+const providers = ref<Provider[]>([])
 
 function parseTimeToMinutes(timeStr: string) {
   const parts = timeStr.split(" ")
@@ -127,12 +104,11 @@ const timeOptions = (() => {
 
 const now = ref(Date.now())
 
-const timeOfDayLabel = computed(() => {
+const timeOfDayKey = computed(() => {
   const hour = new Date(now.value).getHours()
-  if (hour >= 5 && hour < 12) return 'this morning'
-  if (hour >= 12 && hour < 17) return 'this afternoon'
-  if (hour >= 17 && hour < 21) return 'tonight'
-  return 'tonight' // late night still feels like "tonight"
+  if (hour >= 5 && hour < 12) return 'morning'
+  if (hour >= 12 && hour < 17) return 'afternoon'
+  return 'evening'
 })
 
 let tickTimer: ReturnType<typeof setInterval> | null = null
@@ -211,8 +187,8 @@ const watchlistFiltered = computed(() => {
 const hasProviders = computed(() => selectedProviders.value.size > 0)
 
 const activeProviderColors = computed(() => {
-  const colors = PROVIDERS.filter(p => selectedProviders.value.has(p.id)).map(p => p.color)
-  return colors.length ? colors : ["#ff6b35"]
+  const colors = providers.value.filter(p => selectedProviders.value.has(p.id)).map(p => p.color)
+  return colors.length ? colors : ['#ff6b35']
 })
 
 const providerColor = computed(() => activeProviderColors.value[0]!)
@@ -251,14 +227,20 @@ const providerIdParam = computed(() =>
 
 
 function movieProviders(movie: any) {
-  const watchData = movie['watch/providers']?.results?.US
+  const watchData = movie['watch/providers']?.results?.[region.value]
   const flatrate: any[] = watchData?.flatrate || []
   const link: string | null = watchData?.link || null
-  return PROVIDERS
+  return providers.value
     .filter(p => selectedProviders.value.has(p.id) && flatrate.some(f => f.provider_id === p.id))
     .map(p => {
-      const logo = flatrate.find(f => f.provider_id === p.id)?.logo_path
-      return { ...p, logo: logo ? `https://image.tmdb.org/t/p/w45${logo}` : null, link }
+      const logo = flatrate.find(f => f.provider_id === p.id)?.logo_path ?? p.logoPath
+      return {
+        id: p.id,
+        name: p.name,
+        color: p.color,
+        logo: logo ? `https://image.tmdb.org/t/p/w45${logo}` : null,
+        link,
+      }
     })
 }
 
@@ -268,26 +250,24 @@ const MAX_PAGE = 15
 async function fetchPage(providerIds: string, pg: number) {
   const clientSorts = ['runtime.asc', 'runtime.desc']
   const apiSort = clientSorts.includes(sortBy.value) ? 'popularity.desc' : sortBy.value
-  let url = `https://api.themoviedb.org/3/discover/movie?with_watch_providers=${providerIds}&watch_region=US&sort_by=${apiSort}&page=${pg}&with_original_language=en`
-  if (selectedGenre.value) url += `&with_genres=${selectedGenre.value}`
+  const query: Record<string, string> = {
+    with_watch_providers: providerIds,
+    sort_by: apiSort,
+    page: String(pg),
+  }
+  if (selectedGenre.value) query.with_genres = String(selectedGenre.value)
   if (selectedMood.value) {
     const mood = MOODS.find(m => m.id === selectedMood.value)
-    if (mood && mood.keywordIds.length > 0) {
-      url += `&with_keywords=${mood.keywordIds.join('|')}`
-    }
+    if (mood && mood.keywordIds.length > 0) query.with_keywords = mood.keywordIds.join('|')
   }
-  if (personFilter.value) url += `&with_people=${personFilter.value.id}`
-  if (sortBy.value === "vote_average.desc") url += `&vote_count.gte=200`
+  if (personFilter.value) query.with_people = String(personFilter.value.id)
+  if (sortBy.value === 'vote_average.desc') query['vote_count.gte'] = '200'
   if (hiddenGemsOnly.value) {
-    url += `&vote_average.gte=7.5&vote_count.gte=50`
-    if (apiSort === 'popularity.desc') {
-      url = url.replace('sort_by=popularity.desc', 'sort_by=vote_average.desc')
-    }
+    query['vote_average.gte'] = '7.5'
+    query['vote_count.gte'] = '50'
+    if (apiSort === 'popularity.desc') query.sort_by = 'vote_average.desc'
   }
-  const res = await fetch(url, { headers })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.status_message || "API error")
-  return data
+  return tmdb('/discover/movie', { watchRegion: true, query })
 }
 
 async function fetchMovies(providerIds: string, startPage = 1) {
@@ -311,8 +291,7 @@ async function fetchMovies(providerIds: string, startPage = 1) {
     })
     const movieDetails = await Promise.all(
       unique.map((m: any) =>
-        fetch(`https://api.themoviedb.org/3/movie/${m.id}?append_to_response=credits,videos,release_dates,watch/providers`, { headers })
-          .then((r) => r.json())
+        tmdb(`/movie/${m.id}`, { query: { append_to_response: 'credits,videos,release_dates,watch/providers' } })
           .catch(() => ({ ...m, runtime: null }))
       )
     )
@@ -328,7 +307,7 @@ async function fetchMovies(providerIds: string, startPage = 1) {
   }
 }
 
-function toggleProvider(p: typeof PROVIDERS[number]) {
+function toggleProvider(p: Provider) {
   const next = new Set(selectedProviders.value)
   if (next.has(p.id)) next.delete(p.id)
   else next.add(p.id)
@@ -379,11 +358,36 @@ function refetch() {
   }
 }
 
+async function loadProviders() {
+  try {
+    const data = await tmdb('/watch/providers/movie', { watchRegion: true })
+    const list = (data.results ?? []) as any[]
+    providers.value = list
+      .sort((a, b) => (a.display_priority ?? 999) - (b.display_priority ?? 999))
+      .slice(0, 16)
+      .map(p => ({
+        id: p.provider_id,
+        name: p.provider_name,
+        color: providerColorFor(p.provider_id),
+        logoPath: p.logo_path ?? null,
+      }))
+    const valid = new Set(providers.value.map(p => p.id))
+    const next = new Set([...selectedProviders.value].filter(id => valid.has(id)))
+    if (next.size !== selectedProviders.value.size) selectedProviders.value = next
+  } catch { providers.value = [] }
+  if (hasProviders.value) refetch()
+}
+
+loadGenres()
+loadProviders()
+watch(language, () => { loadGenres() })
+watch(region, () => { loadProviders() })
+
 watch(selectedProviders, () => {
   if (hasProviders.value) refetch()
   else { movies.value = []; hasMore.value = false }
 }, { immediate: true })
-watch([selectedGenre, sortBy, personFilter, selectedMood, hiddenGemsOnly], () => { refetch() })
+watch([selectedGenre, sortBy, personFilter, selectedMood, hiddenGemsOnly, tmdbLang], () => { refetch() })
 
 function searchPerson(person: { id: number; name: string }) {
   personFilter.value = person
@@ -474,8 +478,9 @@ async function openMovie(movie: any, cardRect?: DOMRect) {
   let fullMovie = movie
   if (!movie.credits && movie.id) {
     try {
-      const res = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?append_to_response=credits,videos,release_dates,watch/providers`, { headers })
-      if (res.ok) fullMovie = await res.json()
+      fullMovie = await tmdb(`/movie/${movie.id}`, {
+        query: { append_to_response: 'credits,videos,release_dates,watch/providers' },
+      })
     } catch {}
   }
 
@@ -505,46 +510,51 @@ function closeMovie() {
       <header class="pt-20 pb-14 max-sm:pt-14 max-sm:pb-10">
         <div class="flex items-center gap-3 mb-6">
           <div class="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
-          <span class="text-[10px] tracking-[5px] uppercase text-text-muted font-medium">What fits {{ timeOfDayLabel }}</span>
+          <span class="text-[10px] tracking-[5px] uppercase text-text-muted font-medium">{{ t('header.eyebrow', { timeOfDay: t('header.timeOfDay.' + timeOfDayKey) }) }}</span>
           <div class="h-px flex-1 bg-linear-to-r from-transparent via-border to-transparent" />
         </div>
         <h1 class="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold m-0 leading-[1.05] text-text-primary text-center">
-          Set your window.<br />
+          {{ t('header.titleLine1') }}<br />
           <em
             class="tagline-accent font-display italic font-medium"
             :style="activeProviderColors.length > 1
               ? { backgroundImage: providerGradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }
               : { color: providerColor }"
           >
-            We'll find what fits.
+            {{ t('header.titleAccent') }}
           </em>
         </h1>
         <p class="text-text-muted text-[13px] text-center mt-5 max-w-md mx-auto leading-relaxed">
-          Pick a platform, set your start and end time, and only see movies you can actually finish.
+          {{ t('header.subtitle') }}
         </p>
         <div class="w-12 h-px bg-border mx-auto mt-8" />
       </header>
 
       <nav class="flex items-center gap-0 mb-10 border-b border-border-subtle">
-        <button class="tab-btn" :class="{ active: activeTab === 'discover' }" :style="{ '--c': providerColor }" @click="activeTab = 'discover'">DISCOVER</button>
+        <button class="tab-btn" :class="{ active: activeTab === 'discover' }" :style="{ '--c': providerColor }" @click="activeTab = 'discover'">{{ t('nav.discover') }}</button>
         <button class="tab-btn" :class="{ active: activeTab === 'my-list' }" :style="{ '--c': 'var(--color-gold)' }" @click="activeTab = 'my-list'">
-          MY LIST
+          {{ t('nav.myList') }}
           <span v-if="watchlist.length" class="tab-count">{{ watchlist.length }}</span>
         </button>
         <button class="tab-btn" :class="{ active: activeTab === 'watched' }" :style="{ '--c': '#6cb4ee' }" @click="activeTab = 'watched'">
-          WATCHED
+          {{ t('nav.watched') }}
           <span v-if="watched.length" class="tab-count" style="background: color-mix(in srgb, #6cb4ee 15%, transparent); color: #6cb4ee;">{{ watched.length }}</span>
         </button>
         <div class="flex-1" />
+        <LocaleSwitcher class="max-sm:hidden" />
       </nav>
+
+      <div class="hidden max-sm:flex justify-end mb-8">
+        <LocaleSwitcher />
+      </div>
 
       <!-- ═══ Controls ═══ -->
       <div class="grid grid-cols-[1fr_auto] gap-10 items-start mb-12 max-sm:grid-cols-1 max-sm:gap-8">
         <div>
-          <p class="control-label">My services</p>
+          <p class="control-label">{{ t('controls.myServices') }}</p>
           <div class="flex flex-wrap gap-2.5">
             <button
-              v-for="p in PROVIDERS"
+              v-for="p in providers"
               :key="p.id"
               class="pill-btn"
               :class="{ active: selectedProviders.has(p.id) }"
@@ -559,32 +569,32 @@ function closeMovie() {
 
         <div class="flex gap-4 max-sm:flex-col max-sm:gap-6">
           <div class="min-w-36 max-sm:min-w-0">
-            <p class="control-label">Start at</p>
+            <p class="control-label">{{ t('controls.startAt') }}</p>
             <select
               v-model="startTimeStr"
               class="select-input"
               :class="{ active: !!startTimeStr }"
               :style="startTimeStr ? { '--c': providerColor } : {}"
             >
-              <option value="">Now</option>
+              <option value="">{{ t('controls.now') }}</option>
               <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
             </select>
           </div>
           <div class="min-w-36 max-sm:min-w-0">
-            <p class="control-label">Done by</p>
+            <p class="control-label">{{ t('controls.doneBy') }}</p>
             <select
               v-model="endTimeStr"
               class="select-input"
               :class="{ active: !!endTimeStr }"
               :style="endTimeStr ? { '--c': providerColor } : {}"
             >
-              <option value="">Any time</option>
+              <option value="">{{ t('controls.anyTime') }}</option>
               <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
             </select>
             <Transition name="hint">
               <p v-if="maxRuntimeMinutes != null && maxRuntimeMinutes > 0" class="mt-2.5 text-[11px] text-text-muted tracking-wide tabular-nums flex items-center gap-1.5">
                 <span class="inline-block w-1 h-1 rounded-full" :style="{ background: providerColor }" />
-                {{ fmtRuntime(maxRuntimeMinutes) }} max runtime
+                {{ t('controls.maxRuntime', { runtime: fmt.runtime(maxRuntimeMinutes!) }) }}
               </p>
             </Transition>
           </div>
@@ -597,8 +607,8 @@ function closeMovie() {
           <div>
             <!-- Browse by tabs -->
             <div class="flex items-center gap-0 mb-4">
-              <button class="browse-tab" :class="{ active: browseBy === 'mood' }" @click="switchBrowseMode('mood')">Mood</button>
-              <button class="browse-tab" :class="{ active: browseBy === 'genre' }" @click="switchBrowseMode('genre')">Genre</button>
+              <button class="browse-tab" :class="{ active: browseBy === 'mood' }" @click="switchBrowseMode('mood')">{{ t('browse.mood') }}</button>
+              <button class="browse-tab" :class="{ active: browseBy === 'genre' }" @click="switchBrowseMode('genre')">{{ t('browse.genre') }}</button>
             </div>
             <div v-if="browseBy === 'mood'" class="flex flex-wrap gap-2">
               <button
@@ -610,12 +620,12 @@ function closeMovie() {
                 @click="selectMood(mood.id)"
               >
                 <component :is="moodIcons[mood.icon]" :size="14" />
-                {{ mood.label }}
+                {{ t('moods.' + mood.id) }}
               </button>
             </div>
             <div v-else class="flex flex-wrap gap-2">
               <button
-                v-for="g in GENRES"
+                v-for="g in genres"
                 :key="g.id"
                 class="pill-btn pill-sm"
                 :class="{ active: selectedGenre === g.id }"
@@ -628,14 +638,14 @@ function closeMovie() {
           </div>
           <div class="min-w-44 max-sm:min-w-0 flex flex-col gap-4">
             <div>
-              <p class="control-label">Sort by</p>
+              <p class="control-label">{{ t('controls.sortBy') }}</p>
               <select
                 v-model="sortBy"
                 class="select-input"
                 :class="{ active: sortBy !== 'popularity.desc' }"
                 :style="{ '--c': providerColor }"
               >
-                <option v-for="s in SORT_OPTIONS" :key="s.value" :value="s.value">{{ s.label }}</option>
+                <option v-for="value in SORT_VALUES" :key="value" :value="value">{{ t('sort.' + value) }}</option>
               </select>
             </div>
             <button
@@ -645,14 +655,14 @@ function closeMovie() {
               @click="hiddenGemsOnly = !hiddenGemsOnly"
             >
               <Gem :size="14" />
-              Hidden Gems
+              {{ t('filters.hiddenGems') }}
             </button>
             <label v-if="!startTimeStr && endTimeStr" class="expiring-toggle" :style="{ '--c': providerColor }">
               <input type="checkbox" v-model="expiringFirst" class="sr-only" />
               <span class="toggle-track" :class="{ on: expiringFirst }">
                 <span class="toggle-thumb" />
               </span>
-              <span class="text-[12px] text-text-muted">Expiring first</span>
+              <span class="text-[12px] text-text-muted">{{ t('filters.expiringFirst') }}</span>
             </label>
           </div>
         </div>
@@ -661,10 +671,10 @@ function closeMovie() {
       <!-- ═══ Person filter badge ═══ -->
       <Transition name="slide-fade">
         <div v-if="personFilter" class="mb-10 flex items-center gap-3">
-          <span class="text-[10px] tracking-[3px] uppercase text-text-dim font-medium">Showing films with</span>
+          <span class="text-[10px] tracking-[3px] uppercase text-text-dim font-medium">{{ t('person.showingFilmsWith') }}</span>
           <span class="person-badge" :style="{ '--c': providerColor }">
             {{ personFilter.name }}
-            <button class="person-badge-close" @click="clearPersonFilter" aria-label="Clear person filter">
+            <button class="person-badge-close" @click="clearPersonFilter" :aria-label="t('person.clearAria')">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </span>
@@ -680,7 +690,7 @@ function closeMovie() {
             <div class="orbit ring-3" />
           </div>
           <p class="text-text-dim text-sm tracking-wider mt-8 font-display italic">
-            Choose a platform above to explore
+            {{ t('empty.choosePlatform') }}
           </p>
         </div>
       </Transition>
@@ -691,7 +701,7 @@ function closeMovie() {
           <div class="loading-bars">
             <span v-for="i in 5" :key="i" class="bar" :style="{ animationDelay: `${i * 0.1}s`, background: activeProviderColors[(i - 1) % activeProviderColors.length] }" />
           </div>
-          <p class="text-text-muted text-xs tracking-[3px] uppercase mt-6">Loading</p>
+          <p class="text-text-muted text-xs tracking-[3px] uppercase mt-6">{{ t('common.loading') }}</p>
         </div>
       </Transition>
 
@@ -718,11 +728,11 @@ function closeMovie() {
           </span>
           <div class="pb-1.5">
             <span class="text-text-muted text-[13px]">
-              movies finishing before {{ endTimeStr }}
+              {{ t('results.finishingBefore', { time: endTimeStr }) }}
             </span>
             <template v-if="movies.length > filtered.length">
               <span class="text-text-dim text-[13px] ml-1.5">
-                ({{ movies.length - filtered.length }} too long)
+                {{ t('results.tooLong', { count: movies.length - filtered.length }) }}
               </span>
             </template>
           </div>
@@ -731,7 +741,7 @@ function closeMovie() {
         <Transition name="fade" mode="out-in">
           <div v-if="filtered.length === 0" class="text-center py-20">
             <p class="text-text-dim text-sm font-display italic">
-              Nothing fits that window. Try a later time.
+              {{ t('results.nothingFits') }}
             </p>
           </div>
         </Transition>
@@ -775,9 +785,9 @@ function closeMovie() {
               <Bookmark :size="24" class="text-text-dim" />
             </div>
           </div>
-          <p class="text-text-dim text-sm font-display italic mb-2">Nothing saved yet</p>
+          <p class="text-text-dim text-sm font-display italic mb-2">{{ t('myList.emptyTitle') }}</p>
           <p class="text-text-dim text-xs tracking-wide max-w-xs mx-auto leading-relaxed opacity-60">
-            Tap the bookmark on any movie to start building your list
+            {{ t('myList.emptyBody') }}
           </p>
         </div>
         <TransitionGroup v-else name="grid" tag="div" class="grid grid-cols-[repeat(auto-fill,minmax(175px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(135px,1fr))] max-sm:gap-3">
@@ -795,16 +805,16 @@ function closeMovie() {
               <CircleCheckBig :size="24" class="text-text-dim" />
             </div>
           </div>
-          <p class="text-text-dim text-sm font-display italic mb-2">Nothing watched yet</p>
+          <p class="text-text-dim text-sm font-display italic mb-2">{{ t('watched.emptyTitle') }}</p>
           <p class="text-text-dim text-xs tracking-wide max-w-xs mx-auto leading-relaxed opacity-60">
-            Rate a movie to start tracking what you've seen
+            {{ t('watched.emptyBody') }}
           </p>
         </div>
         <template v-else>
           <!-- Stats bar -->
           <div class="watched-stats mb-8">
             <div class="flex flex-col gap-1.5">
-              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Watched</span>
+              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">{{ t('watched.statLabel') }}</span>
               <span class="font-display text-[22px] font-bold text-text-primary leading-none">{{ displayWatchedTotal }}</span>
             </div>
             <div class="w-px h-10 self-center bg-border" />
