@@ -46,6 +46,7 @@ async function loadGenres() {
 
 interface Provider { id: number; name: string; color: string; logoPath: string | null }
 const providers = ref<Provider[]>([])
+const providersLoaded = ref(false)
 
 // A selected time is stored as minutes-since-midnight (0–1439), or null for
 // "Now"/"Any time". Display labels are formatted per the active locale via
@@ -65,9 +66,17 @@ const savedProviders = (() => {
 })()
 const selectedProviders = ref<Set<number>>(savedProviders)
 
+// `selectedProviders` is the durable saved list (persisted, never pruned by region).
+// `selectedProviderList` is its view filtered to what's actually available in the
+// current region — so a service unavailable in one region survives the round trip
+// (US -> India -> US) instead of being dropped from the saved set.
 watch(selectedProviders, (v) => {
   localStorage.setItem('watch:providers', JSON.stringify([...v]))
 })
+
+const selectedProviderList = computed(() =>
+  providers.value.filter(p => selectedProviders.value.has(p.id))
+)
 const selectedGenre = ref<number | null>(null)
 const selectedMood = ref<string | null>(null)
 const browseBy = ref<'mood' | 'genre'>('mood')
@@ -179,7 +188,7 @@ const watchlistFiltered = computed(() => {
   return result
 })
 
-const hasProviders = computed(() => selectedProviders.value.size > 0)
+const hasProviders = computed(() => selectedProviderList.value.length > 0)
 
 const activeProviderColors = computed(() => {
   const colors = providers.value.filter(p => selectedProviders.value.has(p.id)).map(p => p.color)
@@ -217,7 +226,7 @@ const ambientBackground = computed(() => {
 })
 
 const providerIdParam = computed(() =>
-  [...selectedProviders.value].join('|')
+  selectedProviderList.value.map(p => p.id).join('|')
 )
 
 
@@ -314,10 +323,6 @@ function toggleProviderById(id: number) {
   selectedProviders.value = next
 }
 
-const selectedProviderList = computed(() =>
-  providers.value.filter(p => selectedProviders.value.has(p.id))
-)
-
 function toggleGenre(id: number) {
   selectedGenre.value = selectedGenre.value === id ? null : id
 }
@@ -378,14 +383,16 @@ async function loadProviders() {
         color: providerColorFor(p.provider_id),
         logoPath: p.logo_path ?? null,
       }))
-    const valid = new Set(providers.value.map(p => p.id))
-    const next = new Set([...selectedProviders.value].filter(id => valid.has(id)))
-    if (next.size !== selectedProviders.value.size) {
-      selectedProviders.value = next   // the selectedProviders watcher will refetch
-      return
-    }
-  } catch { providers.value = []; return }
+  } catch {
+    if (seq !== providersSeq) return
+    providers.value = []
+  }
+  // Do NOT prune `selectedProviders` here — saved services that this region lacks
+  // must survive so they reappear in a region that has them. Availability is applied
+  // through `selectedProviderList` (the filtered view used for queries and pills).
+  providersLoaded.value = true
   if (hasProviders.value) refetch()
+  else { movies.value = []; hasMore.value = false }
 }
 
 loadGenres()
@@ -699,7 +706,7 @@ function closeMovie() {
 
       <!-- ═══ Empty state ═══ -->
       <Transition name="fade" mode="out-in">
-        <div v-if="!hasProviders && activeTab === 'discover'" class="text-center pt-28 max-sm:pt-20">
+        <div v-if="!hasProviders && providersLoaded && activeTab === 'discover'" class="text-center pt-28 max-sm:pt-20">
           <div class="empty-rings">
             <div class="orbit ring-1" />
             <div class="orbit ring-2" />
