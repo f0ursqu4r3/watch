@@ -39,7 +39,7 @@
   },
   "filters": {
     "hiddenGems": "Geheimtipps",
-    "expiringFirst": "Bald verfügbar zuerst"
+    "expiringFirst": "Läuft bald ab zuerst"
   },
   "person": {
     "showingFilmsWith": "Filme mit",
