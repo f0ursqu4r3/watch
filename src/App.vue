@@ -744,7 +744,7 @@ function closeMovie() {
               {{ t('results.finishingBefore', { time: endTimeStr }) }}
             </span>
             <template v-if="movies.length > filtered.length">
-              <span class="text-text-dim text-[13px] ml-1.5">
+              <span class="text-text-dim text-[13px] ms-1.5">
                 {{ t('results.tooLong', { count: movies.length - filtered.length }) }}
               </span>
             </template>
@@ -957,7 +957,7 @@ function closeMovie() {
   border: 1px solid color-mix(in srgb, var(--c) 20%, transparent);
 }
 .person-badge-close {
-  @apply ml-1 p-0.5 rounded-full cursor-pointer bg-transparent border-0 flex items-center justify-center;
+  @apply ms-1 p-0.5 rounded-full cursor-pointer bg-transparent border-0 flex items-center justify-center;
   color: var(--c);
   opacity: 0.5;
   transition: opacity 0.2s;
@@ -983,6 +983,13 @@ function closeMovie() {
   transform: translateX(14px);
   background: var(--c);
 }
+[dir="rtl"] .toggle-thumb {
+  left: auto;
+  right: 3px;
+}
+[dir="rtl"] .toggle-track.on .toggle-thumb {
+  transform: translateX(-14px);
+}
 
 /* ═══ Select ═══ */
 .select-input {
@@ -992,6 +999,11 @@ function closeMovie() {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233d3832' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
+}
+[dir="rtl"] .select-input {
+  background-position: left 14px center;
+  padding-left: 2.5rem;
+  padding-right: 1rem;
 }
 @media (hover: hover) and (pointer: fine) {
   .select-input:hover {
@@ -1086,7 +1098,7 @@ function closeMovie() {
 }
 .tab-btn.active { color: var(--c); border-bottom-color: var(--c); }
 .tab-count {
-  @apply ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full;
+  @apply ms-1.5 text-[9px] px-1.5 py-0.5 rounded-full;
   background: color-mix(in srgb, var(--color-gold) 15%, transparent);
   color: var(--color-gold);
 }
@@ -1107,7 +1119,7 @@ function closeMovie() {
 }
 .browse-tab + .browse-tab::before {
   content: '/';
-  @apply text-text-dim text-[10px] mr-3;
+  @apply text-text-dim text-[10px] me-3;
   opacity: 0.3;
 }
 

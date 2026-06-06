@@ -848,6 +848,13 @@ onUnmounted(() => {
   opacity: 0;
 }
 
+/* RTL: mirror absolutely-positioned elements */
+[dir="rtl"] .hero-actions { right: auto; left: 16px; }
+[dir="rtl"] .modal-countdown { left: auto; right: 16px; }
+[dir="rtl"] .rating-popover { right: auto; left: 0; transform-origin: top left; }
+[dir="rtl"] .popover-arrow { right: auto; left: 20px; }
+[dir="rtl"] .close-btn { right: auto; left: 1rem; }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .modal-card {

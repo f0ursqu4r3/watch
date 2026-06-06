@@ -547,6 +547,12 @@ const ratingConfig = computed(() => {
   }
 }
 
+/* RTL: mirror absolutely-positioned badges */
+[dir="rtl"] .bookmark-btn { left: auto; right: 10px; }
+[dir="rtl"] .countdown-badge { right: auto; left: 10px; }
+[dir="rtl"] .gem-badge { right: auto; left: 10px; }
+[dir="rtl"] .rating-badge { right: auto; left: 8px; }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .card-wrap {
