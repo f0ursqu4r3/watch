@@ -246,6 +246,10 @@ function movieProviders(movie: any) {
 
 const PAGES_PER_BATCH = 3
 const MAX_PAGE = 15
+const MAX_PROVIDERS = 16
+
+let fetchSeq = 0
+let providersSeq = 0
 
 async function fetchPage(providerIds: string, pg: number) {
   const clientSorts = ['runtime.asc', 'runtime.desc']
@@ -271,6 +275,7 @@ async function fetchPage(providerIds: string, pg: number) {
 }
 
 async function fetchMovies(providerIds: string, startPage = 1) {
+  const seq = ++fetchSeq
   const isInitial = startPage === 1
   if (isInitial) loading.value = true
   else loadingMore.value = true
@@ -295,6 +300,7 @@ async function fetchMovies(providerIds: string, startPage = 1) {
           .catch(() => ({ ...m, runtime: null }))
       )
     )
+    if (seq !== fetchSeq) return
     if (isInitial) movies.value = movieDetails
     else movies.value = [...movies.value, ...movieDetails]
     hasMore.value = endPage < maxAvailable
@@ -358,13 +364,17 @@ function refetch() {
   }
 }
 
+interface RawProvider { provider_id: number; provider_name: string; display_priority?: number; logo_path?: string | null }
+
 async function loadProviders() {
+  const seq = ++providersSeq
   try {
     const data = await tmdb('/watch/providers/movie', { watchRegion: true })
-    const list = (data.results ?? []) as any[]
+    const list = (data.results ?? []) as RawProvider[]
+    if (seq !== providersSeq) return
     providers.value = list
       .sort((a, b) => (a.display_priority ?? 999) - (b.display_priority ?? 999))
-      .slice(0, 16)
+      .slice(0, MAX_PROVIDERS)
       .map(p => ({
         id: p.provider_id,
         name: p.provider_name,
@@ -373,8 +383,11 @@ async function loadProviders() {
       }))
     const valid = new Set(providers.value.map(p => p.id))
     const next = new Set([...selectedProviders.value].filter(id => valid.has(id)))
-    if (next.size !== selectedProviders.value.size) selectedProviders.value = next
-  } catch { providers.value = [] }
+    if (next.size !== selectedProviders.value.size) {
+      selectedProviders.value = next   // the selectedProviders watcher will refetch
+      return
+    }
+  } catch { providers.value = []; return }
   if (hasProviders.value) refetch()
 }
 
