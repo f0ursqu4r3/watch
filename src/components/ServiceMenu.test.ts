@@ -55,6 +55,18 @@ describe('ServiceMenu', () => {
     expect(rows[0]!.text()).toContain('Disney+')
   })
 
+  it('shows a clear button only when the query is non-empty, and clears on click', async () => {
+    const w = mountMenu()
+    await w.find('.add-btn').trigger('click')
+    expect(w.find('.svc-search-clear').exists()).toBe(false)
+    await w.find('.svc-search-input').setValue('dis')
+    expect(w.findAll('.svc-row')).toHaveLength(1)
+    expect(w.find('.svc-search-clear').exists()).toBe(true)
+    await w.find('.svc-search-clear').trigger('click')
+    expect((w.find('.svc-search-input').element as HTMLInputElement).value).toBe('')
+    expect(w.findAll('.svc-row')).toHaveLength(3)
+  })
+
   it('closes on Escape', async () => {
     const w = mountMenu()
     await w.find('.add-btn').trigger('click')

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Plus, Check, Search } from 'lucide-vue-next'
+import { Plus, Check, Search, X } from 'lucide-vue-next'
 
 interface Provider { id: number; name: string; color: string; logoPath: string | null }
 
@@ -15,6 +15,12 @@ const { t } = useI18n()
 const open = ref(false)
 const query = ref('')
 const rootEl = ref<HTMLElement | null>(null)
+const searchInput = ref<HTMLInputElement | null>(null)
+
+function clearSearch() {
+  query.value = ''
+  searchInput.value?.focus()
+}
 
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
@@ -67,12 +73,21 @@ onUnmounted(() => {
         <div class="svc-search">
           <Search :size="14" class="svc-search-icon" />
           <input
+            ref="searchInput"
             v-model="query"
             type="text"
             class="svc-search-input"
             :placeholder="t('controls.searchServices')"
             :aria-label="t('controls.searchServices')"
           />
+          <button
+            v-if="query"
+            class="svc-search-clear"
+            :aria-label="t('controls.clearSearch')"
+            @click="clearSearch"
+          >
+            <X :size="14" />
+          </button>
         </div>
         <ul class="svc-list">
           <li v-for="p in filtered" :key="p.id">
@@ -150,6 +165,17 @@ onUnmounted(() => {
 }
 .svc-search-input::placeholder {
   @apply text-text-dim;
+}
+.svc-search-clear {
+  @apply inline-flex items-center justify-center shrink-0 p-0.5 -me-0.5 rounded-full
+         border-0 bg-transparent cursor-pointer text-text-dim;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .svc-search-clear:hover {
+    @apply text-text-secondary;
+    background: rgba(255, 255, 255, 0.06);
+  }
 }
 
 .svc-list {

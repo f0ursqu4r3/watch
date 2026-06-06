@@ -25,6 +25,7 @@
     "sortBy": "Trier par",
     "addServices": "Ajouter des services",
     "searchServices": "Rechercher des services",
+    "clearSearch": "Effacer la recherche",
     "removeService": "Retirer {service}"
   },
   "browse": {

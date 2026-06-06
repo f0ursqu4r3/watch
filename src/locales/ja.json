@@ -25,6 +25,7 @@
     "sortBy": "並び替え",
     "addServices": "サービスを追加",
     "searchServices": "サービスを検索",
+    "clearSearch": "検索をクリア",
     "removeService": "{service} を削除"
   },
   "browse": {
