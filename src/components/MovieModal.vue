@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Bookmark, BookmarkCheck, ThumbsUp, ThumbsDown, CircleCheckBig } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import { useFormat } from '../composables/useFormat'
+import { useLocale } from '../composables/useLocale'
+const { t } = useI18n()
+const fmt = useFormat()
+const { region } = useLocale()
 
 const props = defineProps<{
   movie: any
@@ -23,10 +29,10 @@ const backdropVisible = ref(false)
 const showRatingPopover = ref(false)
 
 const RATING_OPTIONS = [
-  { key: 'awful' as const, color: '#ff5555', label: 'Awful', direction: 'down' as const, double: true },
-  { key: 'meh' as const, color: '#f0a030', label: 'Meh', direction: 'down' as const, double: false },
-  { key: 'good' as const, color: '#6cb4ee', label: 'Good', direction: 'up' as const, double: false },
-  { key: 'loved' as const, color: '#1CE783', label: 'Loved it', direction: 'up' as const, double: true },
+  { key: 'awful' as const, color: '#ff5555', labelKey: 'rating.awful', direction: 'down' as const, double: true },
+  { key: 'meh' as const, color: '#f0a030', labelKey: 'rating.meh', direction: 'down' as const, double: false },
+  { key: 'good' as const, color: '#6cb4ee', labelKey: 'rating.good', direction: 'up' as const, double: false },
+  { key: 'loved' as const, color: '#1CE783', labelKey: 'rating.loved', direction: 'up' as const, double: true },
 ] as const
 
 const currentRatingConfig = computed(() => {
@@ -51,20 +57,11 @@ let clockTimer: ReturnType<typeof setInterval> | null = null
 
 const effectiveStart = computed(() => props.startAt ?? liveClock.value)
 
-function fmtRuntime(min: number) {
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
-
-const startTimeDisplay = computed(() =>
-  new Date(effectiveStart.value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-)
+const startTimeDisplay = computed(() => fmt.clock(effectiveStart.value))
 
 const endTimeDisplay = computed(() => {
   if (!props.movie.runtime) return ''
-  const end = new Date(effectiveStart.value + props.movie.runtime * 60000)
-  return end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return fmt.clock(effectiveStart.value + props.movie.runtime * 60000)
 })
 
 const countdownSecs = computed(() => {
@@ -85,14 +82,6 @@ const urgency = computed(() => {
   return 'normal'
 })
 
-function fmtCountdown(totalSecs: number) {
-  const h = Math.floor(totalSecs / 3600)
-  const m = Math.floor((totalSecs % 3600) / 60)
-  const s = totalSecs % 60
-  const pad = (n: number) => String(n).padStart(2, '0')
-  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`
-  return `${m}:${pad(s)}`
-}
 
 const backdrop = computed(() =>
   props.movie.backdrop_path
@@ -129,10 +118,10 @@ const trailer = computed(() => {
 
 const certification = computed(() => {
   const releases = props.movie.release_dates?.results || []
-  const us = releases.find((r: any) => r.iso_3166_1 === 'US')
-  if (!us) return ''
-  const cert = us.release_dates.find((d: any) => d.certification)?.certification || ''
-  return cert
+  const match = releases.find((r: any) => r.iso_3166_1 === region.value)
+    || releases.find((r: any) => r.iso_3166_1 === 'US')
+  if (!match) return ''
+  return match.release_dates.find((d: any) => d.certification)?.certification || ''
 })
 
 function onBackdropClick(e: MouseEvent) {
@@ -276,7 +265,7 @@ onUnmounted(() => {
         <button
           class="close-btn absolute top-4 right-4 z-20 w-10 h-10 rounded-full border border-white/8 bg-black/40 backdrop-blur-xl text-text-muted cursor-pointer flex items-center justify-center"
           @click="closeWithAnimation"
-          aria-label="Close"
+          :aria-label="t('modal.close')"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M18 6L6 18M6 6l12 12" />
@@ -292,8 +281,8 @@ onUnmounted(() => {
             <!-- Countdown badge -->
             <Transition name="badge">
               <div v-if="showCountdown" class="modal-countdown" :class="urgency">
-                <span class="text-[10px] text-text-muted mr-1.5">Start within</span>
-                <span class="countdown-value">{{ fmtCountdown(countdownSecs!) }}</span>
+                <span class="text-[10px] text-text-muted mr-1.5">{{ t('modal.startWithin') }}</span>
+                <span class="countdown-value">{{ fmt.countdown(countdownSecs!) }}</span>
               </div>
             </Transition>
             <!-- Accent colored line at bottom of hero -->
@@ -304,7 +293,7 @@ onUnmounted(() => {
             <button class="watchlist-btn" :class="{ saved: isInWatchlist }" @click="emit('toggle-watchlist', movie)">
               <BookmarkCheck v-if="isInWatchlist" :size="14" />
               <Bookmark v-else :size="14" />
-              {{ isInWatchlist ? 'In My List' : 'Add to My List' }}
+              {{ isInWatchlist ? t('modal.inMyList') : t('modal.addToMyList') }}
             </button>
             <div class="relative">
               <button
@@ -313,7 +302,7 @@ onUnmounted(() => {
                 @click.stop="showRatingPopover = !showRatingPopover"
               >
                 <CircleCheckBig :size="14" />
-                Mark Watched
+                {{ t('modal.markWatched') }}
               </button>
               <button
                 v-else
@@ -322,13 +311,13 @@ onUnmounted(() => {
                 @click.stop="showRatingPopover = !showRatingPopover"
               >
                 <component :is="currentRatingConfig?.direction === 'up' ? ThumbsUp : ThumbsDown" :size="14" />
-                Watched
+                {{ t('modal.watched') }}
               </button>
 
               <!-- Rating popover -->
               <Transition name="popover">
-                <div v-if="showRatingPopover" class="rating-popover" role="dialog" aria-label="Rate this movie" @click.stop>
-                  <span class="popover-label">How was it?</span>
+                <div v-if="showRatingPopover" class="rating-popover" role="dialog" :aria-label="t('rating.dialogAria')" @click.stop>
+                  <span class="popover-label">{{ t('rating.prompt') }}</span>
                   <div class="popover-options">
                     <button
                       v-for="opt in RATING_OPTIONS"
@@ -336,7 +325,7 @@ onUnmounted(() => {
                       class="popover-rating-btn"
                       :class="{ active: watchedRating === opt.key }"
                       :style="{ '--r-color': opt.color }"
-                      :aria-label="opt.label"
+                      :aria-label="t(opt.labelKey)"
                       @click="selectRating(opt.key)"
                     >
                       <template v-if="opt.double">
@@ -368,11 +357,11 @@ onUnmounted(() => {
                 <span v-if="certification" class="text-[11px] font-medium tracking-wide px-1.5 py-0.5 rounded border border-text-dim text-text-muted">{{ certification }}</span>
                 <span v-if="year" class="text-[13px] text-text-secondary font-medium">{{ year }}</span>
                 <span v-if="movie.runtime" class="text-[13px] font-mono font-medium tabular-nums" :style="{ color: accentColor }">
-                  {{ fmtRuntime(movie.runtime) }}
+                  {{ fmt.runtime(movie.runtime) }}
                 </span>
                 <span v-if="movie.vote_average > 0" class="text-[13px] text-text-secondary font-medium flex items-center gap-1">
                   <span class="text-gold text-xs">&#9733;</span>
-                  {{ movie.vote_average.toFixed(1) }}
+                  {{ fmt.rating(movie.vote_average) }}
                 </span>
               </div>
               <!-- Genre pills -->
@@ -410,14 +399,14 @@ onUnmounted(() => {
           <!-- Director & Cast -->
           <div v-if="directorObj || cast.length" class="credits-section mt-7">
             <div v-if="directorObj" class="credit-row">
-              <span class="credit-label">Directed by</span>
+              <span class="credit-label">{{ t('modal.directedBy') }}</span>
               <button class="person-link" @click="emit('search-person', { id: directorObj.id, name: directorObj.name })">{{ directorObj.name }}</button>
             </div>
             <div v-if="directorObj && cast.length" class="credit-divider" />
             <div v-if="cast.length" class="cast-list">
               <div v-for="person in cast" :key="person.id" class="cast-row">
                 <button class="person-link" @click="emit('search-person', { id: person.id, name: person.name })">{{ person.name }}</button>
-                <span v-if="person.character" class="cast-role">as {{ person.character }}</span>
+                <span v-if="person.character" class="cast-role">{{ t('modal.as', { character: person.character }) }}</span>
               </div>
             </div>
           </div>
@@ -432,27 +421,27 @@ onUnmounted(() => {
             :style="{ '--accent': accentColor }"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            <span>Watch Trailer</span>
+            <span>{{ t('modal.watchTrailer') }}</span>
           </a>
 
           <!-- Timing bar -->
           <div v-if="movie.runtime" class="timing-bar mt-7 max-sm:flex-wrap max-sm:gap-4">
             <div class="flex flex-col gap-1.5">
-              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Runtime</span>
+              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">{{ t('modal.runtime') }}</span>
               <span class="text-[15px] font-mono font-medium tabular-nums text-text-primary">
-                {{ fmtRuntime(movie.runtime) }}
+                {{ fmt.runtime(movie.runtime) }}
               </span>
             </div>
             <div class="w-px h-10 self-center max-sm:hidden" :style="{ background: `${accentColor}20` }" />
             <div class="flex flex-col gap-1.5">
-              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Start</span>
+              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">{{ t('modal.start') }}</span>
               <span class="text-[15px] font-mono font-medium tabular-nums text-text-secondary">
                 {{ startTimeDisplay }}
               </span>
             </div>
             <div class="w-px h-10 self-center max-sm:hidden" :style="{ background: `${accentColor}20` }" />
             <div class="flex flex-col gap-1.5">
-              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">Done by</span>
+              <span class="text-[9px] tracking-[3px] uppercase text-text-dim font-medium">{{ t('modal.doneBy') }}</span>
               <span class="text-[15px] font-mono font-medium tabular-nums" :style="{ color: accentColor }">
                 {{ endTimeDisplay }}
               </span>
