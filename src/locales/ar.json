@@ -1,0 +1,121 @@
+{
+  "header": {
+    "eyebrow": "ما يناسب {timeOfDay}",
+    "timeOfDay": {
+      "morning": "هذا الصباح",
+      "afternoon": "بعد ظهر اليوم",
+      "evening": "هذه الليلة"
+    },
+    "titleLine1": "حدّد الوقت المتاح لديك.",
+    "titleAccent": "وسنجد ما يناسبه.",
+    "subtitle": "اختر منصة، وحدّد وقت البداية والنهاية، لتشاهد فقط الأفلام التي يمكنك إنهاؤها فعلاً."
+  },
+  "nav": {
+    "discover": "اكتشف",
+    "myList": "قائمتي",
+    "watched": "تمت المشاهدة"
+  },
+  "controls": {
+    "myServices": "خدماتي",
+    "startAt": "البدء عند",
+    "now": "الآن",
+    "doneBy": "الانتهاء قبل",
+    "anyTime": "أي وقت",
+    "maxRuntime": "أقصى مدة {runtime}",
+    "sortBy": "ترتيب حسب"
+  },
+  "browse": {
+    "mood": "المزاج",
+    "genre": "النوع"
+  },
+  "sort": {
+    "popularity.desc": "الأكثر رواجاً",
+    "runtime.asc": "الأقصر أولاً",
+    "runtime.desc": "الأطول أولاً",
+    "vote_average.desc": "الأعلى تقييماً",
+    "primary_release_date.desc": "الأحدث",
+    "primary_release_date.asc": "الأقدم",
+    "revenue.desc": "الأعلى إيرادات"
+  },
+  "filters": {
+    "hiddenGems": "كنوز خفية",
+    "expiringFirst": "ما ينتهي عرضه قريباً أولاً"
+  },
+  "person": {
+    "showingFilmsWith": "عرض أفلام بمشاركة",
+    "clearAria": "إزالة عامل تصفية الشخص"
+  },
+  "empty": {
+    "choosePlatform": "اختر منصة من الأعلى لبدء الاستكشاف"
+  },
+  "results": {
+    "finishingBefore": "أفلام تنتهي قبل {time}",
+    "tooLong": "({count} أطول من اللازم)",
+    "nothingFits": "لا شيء يناسب هذه المدة. جرّب وقتاً لاحقاً."
+  },
+  "myList": {
+    "emptyTitle": "لم تحفظ شيئاً بعد",
+    "emptyBody": "اضغط على علامة الحفظ في أي فيلم لتبدأ قائمتك"
+  },
+  "watched": {
+    "statLabel": "تمت المشاهدة",
+    "emptyTitle": "لم تشاهد شيئاً بعد",
+    "emptyBody": "قيّم فيلماً لتبدأ بتتبّع ما شاهدته"
+  },
+  "moods": {
+    "make-me-laugh": "أضحكني",
+    "edge-of-my-seat": "يحبس الأنفاس",
+    "feel-good": "يبعث على البهجة",
+    "mind-bending": "يحيّر العقل",
+    "dark-and-twisted": "قاتم وملتوٍ",
+    "comfort-watch": "مشاهدة مريحة",
+    "background-noise": "للمشاهدة العابرة",
+    "cry-it-out": "للبكاء بحرية"
+  },
+  "card": {
+    "noRuntime": "المدة غير متوفرة"
+  },
+  "modal": {
+    "close": "إغلاق",
+    "startWithin": "يبدأ خلال",
+    "addToMyList": "أضف إلى قائمتي",
+    "inMyList": "في قائمتي",
+    "markWatched": "تحديد كمشاهَد",
+    "watched": "تمت المشاهدة",
+    "directedBy": "إخراج",
+    "as": "في دور {character}",
+    "watchTrailer": "شاهد المقطع الدعائي",
+    "runtime": "المدة",
+    "start": "البداية",
+    "doneBy": "الانتهاء قبل"
+  },
+  "rating": {
+    "prompt": "كيف كان؟",
+    "dialogAria": "قيّم هذا الفيلم",
+    "awful": "سيئ جداً",
+    "meh": "عادي",
+    "good": "جيد",
+    "loved": "أحببته"
+  },
+  "locale": {
+    "language": "اللغة",
+    "region": "المنطقة"
+  },
+  "regions": {
+    "US": "الولايات المتحدة",
+    "GB": "المملكة المتحدة",
+    "ES": "إسبانيا",
+    "FR": "فرنسا",
+    "DE": "ألمانيا",
+    "JP": "اليابان",
+    "MX": "المكسيك",
+    "BR": "البرازيل",
+    "CA": "كندا",
+    "AU": "أستراليا",
+    "IN": "الهند",
+    "SA": "المملكة العربية السعودية"
+  },
+  "common": {
+    "loading": "جارٍ التحميل"
+  }
+}

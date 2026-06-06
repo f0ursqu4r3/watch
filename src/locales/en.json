@@ -1,0 +1,121 @@
+{
+  "header": {
+    "eyebrow": "What fits {timeOfDay}",
+    "timeOfDay": {
+      "morning": "this morning",
+      "afternoon": "this afternoon",
+      "evening": "tonight"
+    },
+    "titleLine1": "Set your window.",
+    "titleAccent": "We'll find what fits.",
+    "subtitle": "Pick a platform, set your start and end time, and only see movies you can actually finish."
+  },
+  "nav": {
+    "discover": "Discover",
+    "myList": "My List",
+    "watched": "Watched"
+  },
+  "controls": {
+    "myServices": "My services",
+    "startAt": "Start at",
+    "now": "Now",
+    "doneBy": "Done by",
+    "anyTime": "Any time",
+    "maxRuntime": "{runtime} max runtime",
+    "sortBy": "Sort by"
+  },
+  "browse": {
+    "mood": "Mood",
+    "genre": "Genre"
+  },
+  "sort": {
+    "popularity.desc": "Most Popular",
+    "runtime.asc": "Shortest First",
+    "runtime.desc": "Longest First",
+    "vote_average.desc": "Highest Rated",
+    "primary_release_date.desc": "Newest",
+    "primary_release_date.asc": "Oldest",
+    "revenue.desc": "Highest Grossing"
+  },
+  "filters": {
+    "hiddenGems": "Hidden Gems",
+    "expiringFirst": "Expiring first"
+  },
+  "person": {
+    "showingFilmsWith": "Showing films with",
+    "clearAria": "Clear person filter"
+  },
+  "empty": {
+    "choosePlatform": "Choose a platform above to explore"
+  },
+  "results": {
+    "finishingBefore": "movies finishing before {time}",
+    "tooLong": "({count} too long)",
+    "nothingFits": "Nothing fits that window. Try a later time."
+  },
+  "myList": {
+    "emptyTitle": "Nothing saved yet",
+    "emptyBody": "Tap the bookmark on any movie to start building your list"
+  },
+  "watched": {
+    "statLabel": "Watched",
+    "emptyTitle": "Nothing watched yet",
+    "emptyBody": "Rate a movie to start tracking what you've seen"
+  },
+  "moods": {
+    "make-me-laugh": "Make Me Laugh",
+    "edge-of-my-seat": "Edge of My Seat",
+    "feel-good": "Feel-Good",
+    "mind-bending": "Mind-Bending",
+    "dark-and-twisted": "Dark & Twisted",
+    "comfort-watch": "Comfort Watch",
+    "background-noise": "Background Noise",
+    "cry-it-out": "Cry It Out"
+  },
+  "card": {
+    "noRuntime": "No runtime"
+  },
+  "modal": {
+    "close": "Close",
+    "startWithin": "Start within",
+    "addToMyList": "Add to My List",
+    "inMyList": "In My List",
+    "markWatched": "Mark Watched",
+    "watched": "Watched",
+    "directedBy": "Directed by",
+    "as": "as {character}",
+    "watchTrailer": "Watch Trailer",
+    "runtime": "Runtime",
+    "start": "Start",
+    "doneBy": "Done by"
+  },
+  "rating": {
+    "prompt": "How was it?",
+    "dialogAria": "Rate this movie",
+    "awful": "Awful",
+    "meh": "Meh",
+    "good": "Good",
+    "loved": "Loved it"
+  },
+  "locale": {
+    "language": "Language",
+    "region": "Region"
+  },
+  "regions": {
+    "US": "United States",
+    "GB": "United Kingdom",
+    "ES": "Spain",
+    "FR": "France",
+    "DE": "Germany",
+    "JP": "Japan",
+    "MX": "Mexico",
+    "BR": "Brazil",
+    "CA": "Canada",
+    "AU": "Australia",
+    "IN": "India",
+    "SA": "Saudi Arabia"
+  },
+  "common": {
+    "loading": "Loading"
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "header": {
+    "eyebrow": "{timeOfDay}にぴったりの作品",
+    "timeOfDay": {
+      "morning": "今朝",
+      "afternoon": "今日の午後",
+      "evening": "今夜"
+    },
+    "titleLine1": "観られる時間を決めよう。",
+    "titleAccent": "ちょうどいい作品を見つけます。",
+    "subtitle": "配信サービスを選んで開始時刻と終了時刻を設定すれば、ちゃんと観終われる映画だけが表示されます。"
+  },
+  "nav": {
+    "discover": "見つける",
+    "myList": "マイリスト",
+    "watched": "視聴済み"
+  },
+  "controls": {
+    "myServices": "登録サービス",
+    "startAt": "開始時刻",
+    "now": "今すぐ",
+    "doneBy": "終了時刻",
+    "anyTime": "時間指定なし",
+    "maxRuntime": "上映時間 最長{runtime}",
+    "sortBy": "並び替え"
+  },
+  "browse": {
+    "mood": "気分",
+    "genre": "ジャンル"
+  },
+  "sort": {
+    "popularity.desc": "人気順",
+    "runtime.asc": "短い順",
+    "runtime.desc": "長い順",
+    "vote_average.desc": "評価が高い順",
+    "primary_release_date.desc": "新しい順",
+    "primary_release_date.asc": "古い順",
+    "revenue.desc": "興行収入が高い順"
+  },
+  "filters": {
+    "hiddenGems": "隠れた名作",
+    "expiringFirst": "配信終了が近い順"
+  },
+  "person": {
+    "showingFilmsWith": "この人の出演作",
+    "clearAria": "人物フィルターを解除"
+  },
+  "empty": {
+    "choosePlatform": "上の配信サービスを選んで探してみましょう"
+  },
+  "results": {
+    "finishingBefore": "{time}までに観終われる映画",
+    "tooLong": "（{count}本は長すぎます）",
+    "nothingFits": "その時間枠に収まる作品がありません。もう少し遅い時刻でお試しください。"
+  },
+  "myList": {
+    "emptyTitle": "まだ保存した作品はありません",
+    "emptyBody": "映画のブックマークをタップしてリストを作りましょう"
+  },
+  "watched": {
+    "statLabel": "視聴済み",
+    "emptyTitle": "まだ観た作品はありません",
+    "emptyBody": "映画を評価して観た記録を残しましょう"
+  },
+  "moods": {
+    "make-me-laugh": "笑いたい",
+    "edge-of-my-seat": "手に汗握る",
+    "feel-good": "ほっこりする",
+    "mind-bending": "頭がしびれる",
+    "dark-and-twisted": "ダークでひねりあり",
+    "comfort-watch": "安心して観られる",
+    "background-noise": "ながら見向き",
+    "cry-it-out": "思いきり泣ける"
+  },
+  "card": {
+    "noRuntime": "上映時間 情報なし"
+  },
+  "modal": {
+    "close": "閉じる",
+    "startWithin": "開始まで",
+    "addToMyList": "マイリストに追加",
+    "inMyList": "マイリストに追加済み",
+    "markWatched": "視聴済みにする",
+    "watched": "視聴済み",
+    "directedBy": "監督",
+    "as": "{character}役",
+    "watchTrailer": "予告編を見る",
+    "runtime": "上映時間",
+    "start": "開始",
+    "doneBy": "終了"
+  },
+  "rating": {
+    "prompt": "いかがでしたか？",
+    "dialogAria": "この映画を評価する",
+    "awful": "ひどい",
+    "meh": "いまいち",
+    "good": "良い",
+    "loved": "最高だった"
+  },
+  "locale": {
+    "language": "言語",
+    "region": "地域"
+  },
+  "regions": {
+    "US": "アメリカ合衆国",
+    "GB": "イギリス",
+    "ES": "スペイン",
+    "FR": "フランス",
+    "DE": "ドイツ",
+    "JP": "日本",
+    "MX": "メキシコ",
+    "BR": "ブラジル",
+    "CA": "カナダ",
+    "AU": "オーストラリア",
+    "IN": "インド",
+    "SA": "サウジアラビア"
+  },
+  "common": {
+    "loading": "読み込み中"
+  }
+}

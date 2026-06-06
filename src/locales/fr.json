@@ -1,0 +1,121 @@
+{
+  "header": {
+    "eyebrow": "Que regarder {timeOfDay}",
+    "timeOfDay": {
+      "morning": "ce matin",
+      "afternoon": "cet après-midi",
+      "evening": "ce soir"
+    },
+    "titleLine1": "Définissez votre créneau.",
+    "titleAccent": "On trouve ce qui rentre.",
+    "subtitle": "Choisissez une plateforme, indiquez vos heures de début et de fin, et ne voyez que les films que vous pouvez vraiment terminer."
+  },
+  "nav": {
+    "discover": "Découvrir",
+    "myList": "Ma liste",
+    "watched": "Vus"
+  },
+  "controls": {
+    "myServices": "Mes services",
+    "startAt": "Commencer à",
+    "now": "Maintenant",
+    "doneBy": "Terminé avant",
+    "anyTime": "Peu importe l'heure",
+    "maxRuntime": "Durée max de {runtime}",
+    "sortBy": "Trier par"
+  },
+  "browse": {
+    "mood": "Humeur",
+    "genre": "Genre"
+  },
+  "sort": {
+    "popularity.desc": "Les plus populaires",
+    "runtime.asc": "Les plus courts d'abord",
+    "runtime.desc": "Les plus longs d'abord",
+    "vote_average.desc": "Les mieux notés",
+    "primary_release_date.desc": "Les plus récents",
+    "primary_release_date.asc": "Les plus anciens",
+    "revenue.desc": "Plus gros succès au box-office"
+  },
+  "filters": {
+    "hiddenGems": "Pépites cachées",
+    "expiringFirst": "Bientôt indisponibles d'abord"
+  },
+  "person": {
+    "showingFilmsWith": "Films avec",
+    "clearAria": "Effacer le filtre par personne"
+  },
+  "empty": {
+    "choosePlatform": "Choisissez une plateforme ci-dessus pour explorer"
+  },
+  "results": {
+    "finishingBefore": "films se terminant avant {time}",
+    "tooLong": "({count} trop longs)",
+    "nothingFits": "Rien ne rentre dans ce créneau. Essayez une heure plus tardive."
+  },
+  "myList": {
+    "emptyTitle": "Rien d'enregistré pour l'instant",
+    "emptyBody": "Touchez le marque-page sur un film pour commencer votre liste"
+  },
+  "watched": {
+    "statLabel": "Vus",
+    "emptyTitle": "Rien de vu pour l'instant",
+    "emptyBody": "Notez un film pour commencer à suivre ce que vous avez vu"
+  },
+  "moods": {
+    "make-me-laugh": "Pour rire",
+    "edge-of-my-seat": "Plein de suspense",
+    "feel-good": "Feel-good",
+    "mind-bending": "Qui retourne le cerveau",
+    "dark-and-twisted": "Sombre et tordu",
+    "comfort-watch": "Doudou réconfortant",
+    "background-noise": "En fond sonore",
+    "cry-it-out": "Pour pleurer un bon coup"
+  },
+  "card": {
+    "noRuntime": "Durée inconnue"
+  },
+  "modal": {
+    "close": "Fermer",
+    "startWithin": "Commence dans",
+    "addToMyList": "Ajouter à ma liste",
+    "inMyList": "Dans ma liste",
+    "markWatched": "Marquer comme vu",
+    "watched": "Vu",
+    "directedBy": "Réalisé par",
+    "as": "dans le rôle de {character}",
+    "watchTrailer": "Voir la bande-annonce",
+    "runtime": "Durée",
+    "start": "Début",
+    "doneBy": "Terminé avant"
+  },
+  "rating": {
+    "prompt": "C'était comment ?",
+    "dialogAria": "Noter ce film",
+    "awful": "Affreux",
+    "meh": "Bof",
+    "good": "Bien",
+    "loved": "J'ai adoré"
+  },
+  "locale": {
+    "language": "Langue",
+    "region": "Région"
+  },
+  "regions": {
+    "US": "États-Unis",
+    "GB": "Royaume-Uni",
+    "ES": "Espagne",
+    "FR": "France",
+    "DE": "Allemagne",
+    "JP": "Japon",
+    "MX": "Mexique",
+    "BR": "Brésil",
+    "CA": "Canada",
+    "AU": "Australie",
+    "IN": "Inde",
+    "SA": "Arabie saoudite"
+  },
+  "common": {
+    "loading": "Chargement"
+  }
+}

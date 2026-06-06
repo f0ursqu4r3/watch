@@ -1,0 +1,121 @@
+{
+  "header": {
+    "eyebrow": "Qué ver {timeOfDay}",
+    "timeOfDay": {
+      "morning": "esta mañana",
+      "afternoon": "esta tarde",
+      "evening": "esta noche"
+    },
+    "titleLine1": "Marca tu ventana de tiempo.",
+    "titleAccent": "Encontramos lo que cabe.",
+    "subtitle": "Elige una plataforma, indica tu hora de inicio y de fin, y verás solo las películas que puedes terminar a tiempo."
+  },
+  "nav": {
+    "discover": "Descubrir",
+    "myList": "Mi lista",
+    "watched": "Vistas"
+  },
+  "controls": {
+    "myServices": "Mis servicios",
+    "startAt": "Empezar a las",
+    "now": "Ahora",
+    "doneBy": "Terminar antes de",
+    "anyTime": "Cualquier hora",
+    "maxRuntime": "Duración máxima de {runtime}",
+    "sortBy": "Ordenar por"
+  },
+  "browse": {
+    "mood": "Estado de ánimo",
+    "genre": "Género"
+  },
+  "sort": {
+    "popularity.desc": "Más populares",
+    "runtime.asc": "Más cortas primero",
+    "runtime.desc": "Más largas primero",
+    "vote_average.desc": "Mejor valoradas",
+    "primary_release_date.desc": "Más recientes",
+    "primary_release_date.asc": "Más antiguas",
+    "revenue.desc": "Mayor recaudación"
+  },
+  "filters": {
+    "hiddenGems": "Joyas ocultas",
+    "expiringFirst": "Las que pronto se van"
+  },
+  "person": {
+    "showingFilmsWith": "Mostrando películas con",
+    "clearAria": "Quitar filtro de persona"
+  },
+  "empty": {
+    "choosePlatform": "Elige una plataforma arriba para explorar"
+  },
+  "results": {
+    "finishingBefore": "películas que terminan antes de las {time}",
+    "tooLong": "({count} demasiado largas)",
+    "nothingFits": "Nada cabe en esa ventana. Prueba con una hora más tarde."
+  },
+  "myList": {
+    "emptyTitle": "Aún no has guardado nada",
+    "emptyBody": "Toca el marcador en cualquier película para empezar tu lista"
+  },
+  "watched": {
+    "statLabel": "Vistas",
+    "emptyTitle": "Aún no has visto nada",
+    "emptyBody": "Valora una película para empezar a registrar lo que has visto"
+  },
+  "moods": {
+    "make-me-laugh": "Para reír",
+    "edge-of-my-seat": "Pura tensión",
+    "feel-good": "Para animarse",
+    "mind-bending": "Que hace pensar",
+    "dark-and-twisted": "Oscuro y retorcido",
+    "comfort-watch": "Para acurrucarse",
+    "background-noise": "De fondo",
+    "cry-it-out": "Para llorar a gusto"
+  },
+  "card": {
+    "noRuntime": "Sin duración"
+  },
+  "modal": {
+    "close": "Cerrar",
+    "startWithin": "Empieza en",
+    "addToMyList": "Añadir a mi lista",
+    "inMyList": "En mi lista",
+    "markWatched": "Marcar como vista",
+    "watched": "Vista",
+    "directedBy": "Dirigida por",
+    "as": "como {character}",
+    "watchTrailer": "Ver tráiler",
+    "runtime": "Duración",
+    "start": "Inicio",
+    "doneBy": "Termina antes de"
+  },
+  "rating": {
+    "prompt": "¿Qué te pareció?",
+    "dialogAria": "Valorar esta película",
+    "awful": "Horrible",
+    "meh": "Regular",
+    "good": "Buena",
+    "loved": "Me encantó"
+  },
+  "locale": {
+    "language": "Idioma",
+    "region": "Región"
+  },
+  "regions": {
+    "US": "Estados Unidos",
+    "GB": "Reino Unido",
+    "ES": "España",
+    "FR": "Francia",
+    "DE": "Alemania",
+    "JP": "Japón",
+    "MX": "México",
+    "BR": "Brasil",
+    "CA": "Canadá",
+    "AU": "Australia",
+    "IN": "India",
+    "SA": "Arabia Saudí"
+  },
+  "common": {
+    "loading": "Cargando"
+  }
+}

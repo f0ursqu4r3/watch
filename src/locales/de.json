@@ -1,0 +1,121 @@
+{
+  "header": {
+    "eyebrow": "Was passt {timeOfDay}",
+    "timeOfDay": {
+      "morning": "heute Morgen",
+      "afternoon": "heute Nachmittag",
+      "evening": "heute Abend"
+    },
+    "titleLine1": "Leg dein Zeitfenster fest.",
+    "titleAccent": "Wir finden, was reinpasst.",
+    "subtitle": "Wähle eine Plattform, leg deine Start- und Endzeit fest und sieh nur Filme, die du wirklich zu Ende schauen kannst."
+  },
+  "nav": {
+    "discover": "Entdecken",
+    "myList": "Meine Liste",
+    "watched": "Gesehen"
+  },
+  "controls": {
+    "myServices": "Meine Dienste",
+    "startAt": "Start um",
+    "now": "Jetzt",
+    "doneBy": "Fertig bis",
+    "anyTime": "Egal wann",
+    "maxRuntime": "Maximale Laufzeit {runtime}",
+    "sortBy": "Sortieren nach"
+  },
+  "browse": {
+    "mood": "Stimmung",
+    "genre": "Genre"
+  },
+  "sort": {
+    "popularity.desc": "Beliebteste",
+    "runtime.asc": "Kürzeste zuerst",
+    "runtime.desc": "Längste zuerst",
+    "vote_average.desc": "Bestbewertet",
+    "primary_release_date.desc": "Neueste",
+    "primary_release_date.asc": "Älteste",
+    "revenue.desc": "Höchste Einnahmen"
+  },
+  "filters": {
+    "hiddenGems": "Geheimtipps",
+    "expiringFirst": "Bald verfügbar zuerst"
+  },
+  "person": {
+    "showingFilmsWith": "Filme mit",
+    "clearAria": "Personenfilter entfernen"
+  },
+  "empty": {
+    "choosePlatform": "Wähle oben eine Plattform, um loszulegen"
+  },
+  "results": {
+    "finishingBefore": "Filme, die vor {time} enden",
+    "tooLong": "({count} zu lang)",
+    "nothingFits": "Nichts passt in dieses Zeitfenster. Versuch es mit einer späteren Uhrzeit."
+  },
+  "myList": {
+    "emptyTitle": "Noch nichts gespeichert",
+    "emptyBody": "Tippe bei einem Film auf das Lesezeichen, um deine Liste aufzubauen"
+  },
+  "watched": {
+    "statLabel": "Gesehen",
+    "emptyTitle": "Noch nichts gesehen",
+    "emptyBody": "Bewerte einen Film, um festzuhalten, was du gesehen hast"
+  },
+  "moods": {
+    "make-me-laugh": "Zum Lachen",
+    "edge-of-my-seat": "Nägelkauend spannend",
+    "feel-good": "Gute Laune",
+    "mind-bending": "Verdreht den Kopf",
+    "dark-and-twisted": "Düster und abgründig",
+    "comfort-watch": "Wohlfühlfilm",
+    "background-noise": "Nebenbei laufen lassen",
+    "cry-it-out": "Zum Weinen"
+  },
+  "card": {
+    "noRuntime": "Keine Laufzeit"
+  },
+  "modal": {
+    "close": "Schließen",
+    "startWithin": "Beginnt in",
+    "addToMyList": "Zu meiner Liste",
+    "inMyList": "In meiner Liste",
+    "markWatched": "Als gesehen markieren",
+    "watched": "Gesehen",
+    "directedBy": "Regie von",
+    "as": "als {character}",
+    "watchTrailer": "Trailer ansehen",
+    "runtime": "Laufzeit",
+    "start": "Start",
+    "doneBy": "Fertig bis"
+  },
+  "rating": {
+    "prompt": "Wie war's?",
+    "dialogAria": "Diesen Film bewerten",
+    "awful": "Furchtbar",
+    "meh": "Geht so",
+    "good": "Gut",
+    "loved": "Geliebt"
+  },
+  "locale": {
+    "language": "Sprache",
+    "region": "Region"
+  },
+  "regions": {
+    "US": "Vereinigte Staaten",
+    "GB": "Vereinigtes Königreich",
+    "ES": "Spanien",
+    "FR": "Frankreich",
+    "DE": "Deutschland",
+    "JP": "Japan",
+    "MX": "Mexiko",
+    "BR": "Brasilien",
+    "CA": "Kanada",
+    "AU": "Australien",
+    "IN": "Indien",
+    "SA": "Saudi-Arabien"
+  },
+  "common": {
+    "loading": "Wird geladen"
+  }
+}
